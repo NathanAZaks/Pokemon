@@ -3,6 +3,10 @@ My Pokemon Recreation
 
 Order of Stats: speed, special-defense, special-attack, defense, attack, hp
 
-Next steps: instead of creating variables to compare the pokemon stats, just reference the dictionaries/list directly
+Damage calulation: level, power, attack, defense, mods
 
-Damage calulation: targets, weather, critical, random, stab, types, burn, level, power, attack, defense
+Mods calculation: targets, weather, critical, random, stab, types, burn
+
+Next Steps: 
+-Change "whoAttacks" from 0 to 1 and vice versa for each move between opponent and user
+-How to pass objects from one function/class to another

@@ -37,7 +37,7 @@ def introSequence():
 	print("My guess is that you already knew that and you came to Pallet Town to start your journey to becoming a Pokémon Master. Well let's get started.")
 	print("Let me show you how to battle!")
 
-def pickPokemon():
+def fightSequence():
 
 	userPokemon = str.lower(input("What pokemon do you want? (Enter a pokemon name or 'random'): "))
 
@@ -96,11 +96,7 @@ def pickPokemon():
 	oppoPokeStats = list(oppoPokeStats.items())
 	#print(json.dumps(oppoPokeStats))
 
-	print(userPokeStats,oppoPokeStats)
-
-	return userPokeStats,oppoPokeStats
-
-def fightSequence():
+	# print(userPokeStats,oppoPokeStats)
 
 	# PICK USER POKEMON, GET STATS
 
@@ -220,6 +216,5 @@ def fightSequence():
 	return
 
 # introSequence()
-pickPokemon()
-# fightSequence()
+fightSequence()
 # modCalc()
