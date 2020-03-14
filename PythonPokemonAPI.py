@@ -1,6 +1,7 @@
 import json, requests, random, time, collections
 
 from PIL import Image
+from sys import stdout as flush
 
 def dmgCalc(level, power, attack, defense):
 
@@ -15,6 +16,12 @@ def modCalc(targets, weather, badge, critical, random, stab, type, burn):
 	#damage modification calculations
 	mods = targets * weather * critical * random * stab * types * burn
 
+def scrollingText(string):
+	for char in string:
+		print(char, end='')
+		flush.flush()
+		time.sleep(.05)
+
 def introSequence():
 
 	# OPEN POKÉMON IMGAGE
@@ -25,37 +32,49 @@ def introSequence():
 
 	# INTRO TO GAME AND WORLD OF POKÉMON
 
-	print("Hi, Welcome to Pallet Town. I'm Nathan, I'll be your guide.")
-	# time.sleep(2)
-	print("Hey you look like that new kid in town.")
-	trainerName = input("What was your name again? ").capitalize()
-	# time.sleep(1)
-	print("Oh right, %s! Professor Oak told us you would be coming." % trainerName)
-	# time.sleep(2)
-	print("Well, welcome to the world of Pokemon. This world is inhabited by creatures called Pokémon! For some people, pokémon are pets. Others use them for fights. Professor Oak studies pokémon as a profession. Myself... I just want to be homies with all my bois.")
-	# time.sleep(8)
-	print("My guess is that you already knew that and you came to Pallet Town to start your journey to becoming a Pokémon Master. Well let's get started.")
-	print("Let me show you how to battle!")
+	intro1 = "Hey you look like that new kid in town. Hi, Welcome to Pallet Town. I'm Nathan, I'll be your guide. What was your name again? "
+	
+	# print("Oh right, %s! Professor Oak told us you would be coming." % trainerName)
+	# print("Well, welcome to the world of Pokemon. This world is inhabited by creatures called Pokémon! For some people, pokémon are pets. Others use them for fights. Professor Oak studies pokémon as a profession. Myself... I just want to study them.")
+	# print("My guess is that you already knew that and you came to Pallet Town to start your journey to becoming a Pokémon Master. Well let's get started.")
+	# print("Let me show you how to battle!")
+
+	scrollingText(intro1)
+	trainerName = input("").capitalize()
+	intro2 = "Oh right, %s! Professor Oak told us you would be coming. Well, welcome to the world of Pokemon. This world is inhabited by creatures called Pokémon! For some people, pokémon are pets. Others use them for fights. Professor Oak studies pokémon as a profession. Myself... I just want to be friends. My guess is that you already knew that and you came to Pallet Town to start your journey to becoming a Pokémon Master. Well let's get started. Let me show you how to battle!" % trainerName
+	scrollingText(intro2)
 
 def fightSequence():
 
-	userPokemon = str.lower(input("What pokemon do you want? (Enter a pokemon name or 'random'): "))
+	movePower = 45
 
-	if userPokemon == "random":
-		userPokemon = random.randint(1, 808)
-		userPokemonData = requests.get('https://pokeapi.co/api/v2/pokemon/%s/' % str(userPokemon))
-		userPokemon = userPokemonData.json()['forms'][0]['name']
+	validUserPokemon = 0
+	validOppoPokemon = 0
 
-		### Add error message about no internet connection
+	while(validUserPokemon == 0):
+		userPokemon = str.lower(input("\nWhat pokemon do you want? (Enter a pokemon name or 'random'): "))
 
-	else:
-		userPokemonData = requests.get('https://pokeapi.co/api/v2/pokemon/%s/' % str(userPokemon))
-		userPokemonData.json()['forms'][0]['name']
-		### Add more specific Error Messages
+		if userPokemon == "random":
+			userPokemon = random.randint(1, 808)
+			userPokemonData = requests.get('https://pokeapi.co/api/v2/pokemon/%s/' % str(userPokemon))
+			userPokemon = userPokemonData.json()['forms'][0]['name']
 
-		if userPokemonData.status_code != 200:
-			print ("Sorry, " + userPokemon + " is not a recognized pokemon. Check your spelling, maybe?")
-			return
+			validUserPokemon = 1
+
+			### Add error message about no internet connection
+
+		else:
+			userPokemonData = requests.get('https://pokeapi.co/api/v2/pokemon/%s/' % str(userPokemon))
+			### Add more specific Error Messages
+
+			if userPokemonData.status_code != 200:
+				print ("Sorry, " + userPokemon + " is not a recognized pokemon. Check your spelling, maybe?")
+				validUserPokemon = 0
+
+			else:
+				userPokemon = userPokemonData.json()['forms'][0]['name']
+				validUserPokemon = 1
+
 
 	print ("You chose: %s" % (userPokemonData.json()['forms'][0]['name'].capitalize()))
 
@@ -68,22 +87,26 @@ def fightSequence():
 
 	### PICK OPPONENT POKEMON, GET STATS
 
-	oppoPokemon = str.lower(input("What pokemon do you want to battle? (Enter a pokemon name or 'random'): "))
+	while(validOppoPokemon == 0):
+		oppoPokemon = str.lower(input("What pokemon do you want to battle? (Enter a pokemon name or 'random'): "))
 
+		if oppoPokemon == "random":
+			oppoPokemon = random.randint(1, 808)
+			oppoPokemonData = requests.get('https://pokeapi.co/api/v2/pokemon/%s/' % str(oppoPokemon))
+			oppoPokemon = oppoPokemonData.json()['forms'][0]['name']
+			validOppoPokemon = 1
 
-	if oppoPokemon == "random":
-		oppoPokemon = random.randint(1, 808)
-		oppoPokemonData = requests.get('https://pokeapi.co/api/v2/pokemon/%s/' % str(oppoPokemon))
-		oppoPokemon = oppoPokemonData.json()['forms'][0]['name']
+			### Add error message about no internet connenction
 
-		### Add error message about no internet connenction
+		else: 
+			oppoPokemonData = requests.get('https://pokeapi.co/api/v2/pokemon/%s/' % str(oppoPokemon))
 
-	else: 
-		oppoPokemonData = requests.get('https://pokeapi.co/api/v2/pokemon/%s/' % str(oppoPokemon))
-		oppoPokemonData.json()['forms'][0]['name']
-		if oppoPokemonData.status_code != 200:
-			print ("Sorry, " + str(userPokemon) + " is not a recognized pokemon. Check your spelling, maybe?")
-			return
+			if oppoPokemonData.status_code != 200:
+				print ("Sorry, " + str(oppoPokemon) + " is not a recognized pokemon. Check your spelling, maybe?")
+				validOppoPokemon = 0
+			else:	
+				oppoPokemon = oppoPokemonData.json()['forms'][0]['name']
+				validOppoPokemon = 1
 
 
 	print ("\nYou will be fighting against: %s" % (oppoPokemonData.json()['forms'][0]['name'].capitalize()))
@@ -125,96 +148,81 @@ def fightSequence():
 
 	print ("So you picked:", userPokemon.capitalize(), "and you will be fighting against:", oppoPokemon.capitalize())
 
+	print("\nLET THE BATTLE BEGIN\n")
+
+	print("User Pokemon HP:", userPokeHp)
+	print("Opponent Pokemon HP:", oppoPokeHp)
+
 	if userPokeSpd > oppoPokeSpd:
-		print ("You're faster, you go first!")
+		print ("\nYou're faster, you go first!")
 		whoAttacks = 0
 
 	elif userPokeSpd < oppoPokeSpd:
-		print ("You're slower, opponent goes first!")
+		print ("\nYou're slower, opponent goes first!")
 		whoAttacks = 1
 
 	else:
 		coinToss = random.randint(0,1)
 		if coinToss == 0:
-			print ("You won the coin toss, you go first!")
+			print ("\nYou won the coin toss, you go first!")
 			whoAttacks = 0
 		else:
-			print ("You lost the coin toss, opponent goes first!")
+			print ("\nYou lost the coin toss, opponent goes first!")
 			whoAttacks = 1
 
 	#BEGIN BATTLE SEQUENCE
 
-	print("\nUser Pokemon HP:", userPokeHp)
-	print("Opponent Pokemon HP:", oppoPokeHp)
-
 	while userPokeHp > 0 and oppoPokeHp > 0:
 		# ADD THE STUFF ABOUT ACTUALLY LIKE FIGHTING AND STUFF HERE
 		# WHILE BOTH POKEMON ARE ABOVE HP = 0, ALLOW TO USE ATTACKS
-		
-		print("What would you like to do?")
-		action = str.lower(input("You can attack or run: "))
 
-		if action == "attack":
-			if whoAttacks == 0:
-				#User is attacked first
-				atkDmg = round(dmgCalc(oppoPokeLevel, 45, oppoPokeAtk, userPokeDef))
-				
-				print("\nYour", userPokemon, "attacked the opposing", oppoPokemon)
-				print("Attack damage:", atkDmg)
+		if whoAttacks == 0:
+			# User Pokemon attack
+			print("\nWhat would you like to do?")
+			action = str.lower(input("You can attack or run: \n"))
 
-				userPokeHp = userPokeHp - atkDmg
-				
-				print("User Pokemon HP:", userPokeHp)
-				print("Opponent Pokemon HP:", oppoPokeHp)
+			if action == "attack":
+				atkDmg = round(dmgCalc(userPokeLevel, movePower, userPokeAtk, oppoPokeDef))
 
-				#Attack opponent
-				atkDmg = round(dmgCalc(userPokeLevel, 45, userPokeAtk, oppoPokeDef))
-				
-				print("\nThe opposing", oppoPokemon, "attacked your", userPokemon)
-				print("Attack damage:", atkDmg)
-
+				print("\nYour %s attacked the opposing %s!" % (userPokemon,oppoPokemon))
 				oppoPokeHp = oppoPokeHp - atkDmg
 
 				print("User Pokemon HP:", userPokeHp)
-				print("Opponent Pokemon HP:", oppoPokeHp)
+				print("Opponent Pokemon HP:", oppoPokeHp)	
+				
+				whoAttacks = 1 # Set opponent Pokemon to attack 
+
+				time.sleep(1)
+
+			elif action == "run":
+				print("\nYou have successfully run away.")
+				return
+
 			else:
-				#Attack opponent first
-				atkDmg = round(dmgCalc(userPokeLevel, 45, userPokeAtk, oppoPokeDef))
-				
-				print("\nYour", oppoPokemon, "attacked the opposing", userPokemon)
-				print("Attack damage:", atkDmg)
+				print(action, "is not a valid option.")
 
-				oppoPokeHp = oppoPokeHp - atkDmg
+		elif whoAttacks == 1:
+			# Opponent Pokemon attack
+			atkDmg = round(dmgCalc(oppoPokeLevel, movePower, oppoPokeAtk, userPokeDef))
 
-				print("User Pokemon HP:", userPokeHp)
-				print("Opponent Pokemon HP:", oppoPokeHp)
+			print("\nThe opposing %s attacked your %s!" % (oppoPokemon,userPokemon))
+			userPokeHp = userPokeHp - atkDmg
 
-				#User is attacked
-				atkDmg = round(dmgCalc(oppoPokeLevel, 45, oppoPokeAtk, userPokeDef))
-				
-				print("\nYour", userPokemon, "attacked the opposing", oppoPokemon)
-				print("Attack damage:", atkDmg)
+			print("User Pokemon HP:", userPokeHp)
+			print("Opponent Pokemon HP:", oppoPokeHp)
 
-				userPokeHp = userPokeHp - atkDmg
-				
-				print("User Pokemon HP:", userPokeHp)
-				print("Opponent Pokemon HP:", oppoPokeHp)
+			whoAttacks = 0
 
-		elif action == "run":
-			print("You successfully escaped from the battle.")
-			return
-
-		else:
-			print(action, "is not a valid option.")
+			time.sleep(1)
 
 		if userPokeHp < 0:
-			print("Your", userPokemon, "has fainted and is unable to battle.")
+			print("Your", userPokemon, "has fainted and is unable to battle.", oppoPokemon, "wins!")
 
 		if oppoPokeHp < 0:
-			print("The opponent", oppoPokemon, "has fainted is unable to battle.")
+			print("The opponent", oppoPokemon, "has fainted is unable to battle.", "Your", userPokemon, "wins!")
 	
 	return
 
-# introSequence()
+introSequence()
 fightSequence()
 # modCalc()
