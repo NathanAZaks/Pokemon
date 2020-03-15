@@ -1,4 +1,4 @@
-import json, requests, random, time, collections
+import json, requests, random, time, collections, os
 
 from PIL import Image
 from sys import stdout as flush
@@ -26,9 +26,11 @@ def introSequence():
 
 	# OPEN POKÉMON IMGAGE
 
+	# pokeImg.save("pokeImg.png")
 	# pokeImg = Image.open("pokeImg.png")
-
+	# pokeImg.format = "PNG"
 	# pokeImg.show()
+	os.system("open pokeImg.png")
 
 	# INTRO TO GAME AND WORLD OF POKÉMON
 
