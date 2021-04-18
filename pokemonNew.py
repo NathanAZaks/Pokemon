@@ -1,76 +1,90 @@
-import requests, json, random, time, collections, os
+import requests
+import json
+import random
+import time
+import collections
+import os
 from PIL import Image
 
+
 class pokemon:
-	def __init__(self, name, stats):
-		self.name = name
-		self.stats = stats
+    """Class container for pokemon."""
 
-# PICK USER POKEMON
-def choose_user_pokemon():
-	validUserPokemon = 1
-	while validUserPokemon == 1:
-		userChoice = str.lower(input("What pokemon do you choose? (Enter a pokemon name or 'random'): "))
-		if userChoice == "random":
-			randomNumber = str(random.randint(1, 898))
-			userChoiceData = requests.get(f"https://pokeapi.co/api/v2/pokemon/{randomNumber}/")
-		else:
-			userChoiceData = requests.get(f"https://pokeapi.co/api/v2/pokemon/{userChoice}/")
-			### Add more specific Error Messages
-			if userChoiceData.status_code != 200:
-				print (f"Sorry, {userChoice} is not a recognized pokemon. Check your spelling, maybe?")
-				validUserPokemon = 0
-			else:
-				userPokemon = userPokemonData.json()['name']
-				validUserPokemon = 1
+    pokemonStats = []
 
-	userStats={}
-	for statNum in range(0, 5):
-		userStats[req.json()['stats'][statNum]['stat']['name']] = userChoiceData.json()['stats'][statNum]['base_stat']
-	return userPokemon = pokemon(userChoiceData.json()['name'], userStats)
+    def __init__(self):
+        """Init function."""
+        pass
 
-def choose_oppo_pokemon():
-	validOppoPokemon = 1
-	while validOppoPokemon == 1:
-		oppoChoice = str.lower(input("What pokemon do you choose? (Enter a pokemon name or 'random'): "))
-		if oppoChoice == "random":
-			randomNumber = str(random.randint(1, 898))
-			oppoChoiceData = requests.get(f"https://pokeapi.co/api/v2/pokemon/{randomNumber}/")
-		else:
-			oppoChoiceData = requests.get(f"https://pokeapi.co/api/v2/pokemon/{oppoChoice}/")
-			### Add more specific Error Messages
-			if oppoChoiceData.status_code != 200:
-				print (f"Sorry, {oppoChoice} is not a recognized pokemon. Check your spelling or your internet connection, maybe?")
-				validOppoPokemon = 0
-			else:
-				oppoPokemon = userOppoData.json()['name']
-				validOppoPokemon = 1
+    def choose_pokemon(self):
+        """Receives user input of a pokemon name or "random" to set pokemon."""
+        pickPokemon = 1
+        while pickPokemon == 1:
+            pokemonChoice = str.lower(input("What pokemon do you choose? (Enter a Pokemon name or 'random'): "))
+            if pokemonChoice == "random":
+                randomNumber = str(random.randint(1, 898))
+                pokemonChoiceData = requests.get(f"https://pokeapi.co/api/v2/pokemon/{randomNumber}/")
+            else:
+                pokemonChoiceData = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemonChoice}/")
+            # TODO: Add more specific Error Messages
+            if pokemonChoiceData.status_code != 200:
+                print(f"Sorry, {pokemonChoice} is not a recognized pokemon. Check your spelling, maybe?")
+            else:
+                userPokemon = pokemonChoiceData.json()['name']
+                pickPokemon = 0
 
-	oppoStats={}
-	for statNum in range(0, 5):
-		oppoStats[req.json()['stats'][statNum]['stat']['name']] = oppoChoiceData.json()['stats'][statNum]['base_stat']
-	return oppoPokemon = pokemon(oppoChoiceData.json()['name'], oppoStats)
+        for statNum in range(0, 6):
+            self.pokemonStats.append(pokemonChoiceData.json()['stats'][statNum]['base_stat'])
 
-def do_damage(attackingPokemon, defendingPokemon):
-	randValue = random.randint(85, 100)
-	atkDmg = ((((((2 * 99) / 5) + 2) * 60 * (attackingPokemon.stats["attack"] / defendingPokemon.stats["defense"]) / 50) + 2) * (randValue/100)) # 99 is Pokemon Level, 60 is Move Power
-	defendingPokemon.stats['hp'] -= atkDmg
+        print(f"You chose {userPokemon}")
 
-def scrollingText(string):
-	for char in string:
-		print(char, end='')
-		flush.flush()
-		time.sleep(.05)
+    def printStats(self):
+        """Print pokemon stats."""
+        for statNum in range(0, 6):
+            print("stat: " + str(self.pokemonStats[statNum]))
+        print("\n")
+
+    def takeDamage(self, damage):
+        """Reduce pokemon hp by 'damage' amount."""
+        self.pokemonStats[5] -= damage
+
+
+def calculateDamage(attackingPokemon, defendingPokemon):
+    """Calculate damage between two pokemon."""
+    pokemonLevel = 99
+    movePower = 60
+    randValue = random.randint(85, 100)
+    atkDmg = ((((((2 * pokemonLevel) / 5) + 2) * movePower * (attackingPokemon.pokemonStats[1] / defendingPokemon.pokemonStats[2]) / 50) + 2) * (randValue/100))
+    return atkDmg
+
+
+# def scrollingText(string):
+#     for char in string:
+#         print(char, end='')
+#         flush.flush()
+#         time.sleep(.05)
+
+
+def main():
+    """Use the main function to run code."""
+    self = pokemon()
+    self.choose_pokemon()
+    self.printStats()
+
+    oppo = pokemon()
+    oppo.choose_pokemon()
+    oppo.printStats()
+
+
+if __name__ == "__main__":
+    main()
 
 # Next Steps:
 # - Implement actual battling
 # - Find applicable moves for each pokemon
-# - - Grab move power from json
+# # - Grab move power from json
 # - Set up introduction
-# - 
 
 # img = Image.open(requests.get('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/123.png', stream = True).raw)
-# img
-
 
 # Order of Stats: hp, attack, defense, special-attack, special-defense, speed
