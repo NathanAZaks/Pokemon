@@ -11,6 +11,7 @@ class pokemon:
     """Class container for pokemon."""
 
     pokemonStats = []
+    pokemonName = ""
 
     def __init__(self):
         """Init function."""
@@ -18,9 +19,9 @@ class pokemon:
 
     def choose_pokemon(self):
         """Receives user input of a pokemon name or "random" to set pokemon."""
-        pickPokemon = 1
-        while pickPokemon == 1:
-            pokemonChoice = str.lower(input("What pokemon do you choose? (Enter a Pokemon name or 'random'): "))
+        while True:
+            scrollingText("What pokemon do you choose? (Enter a Pokemon name or 'random'): ")
+            pokemonChoice = str.lower(input(""))
             if pokemonChoice == "random":
                 randomNumber = str(random.randint(1, 898))
                 pokemonChoiceData = requests.get(f"https://pokeapi.co/api/v2/pokemon/{randomNumber}/")
@@ -28,15 +29,15 @@ class pokemon:
                 pokemonChoiceData = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemonChoice}/")
             # TODO: Add more specific Error Messages
             if pokemonChoiceData.status_code != 200:
-                print(f"Sorry, {pokemonChoice} is not a recognized pokemon. Check your spelling, maybe?")
+                scrollingText(f"Sorry, {pokemonChoice} is not a recognized pokemon. Check your spelling, maybe?")
             else:
-                userPokemon = pokemonChoiceData.json()['name']
-                pickPokemon = 0
+                self.pokemonName = pokemonChoiceData.json()['name']
+                break
 
         for statNum in range(0, 6):
             self.pokemonStats.append(pokemonChoiceData.json()['stats'][statNum]['base_stat'])
 
-        print(f"You chose {userPokemon}")
+        scrollingText(f"You chose {self.pokemonName}")
 
     def printStats(self):
         """Print pokemon stats."""
@@ -46,40 +47,75 @@ class pokemon:
 
     def takeDamage(self, damage):
         """Reduce pokemon hp by 'damage' amount."""
-        self.pokemonStats[5] -= damage
+        self.pokemonStats[0] -= damage
+        print(f"{self.pokemonName} took {damage} damage.")
 
 
-def calculateDamage(attackingPokemon, defendingPokemon):
+def calculateDamage(attackingPokemon, defendingPokemon, movePower = 60):
     """Calculate damage between two pokemon."""
     pokemonLevel = 99
-    movePower = 60
     randValue = random.randint(85, 100)
     atkDmg = ((((((2 * pokemonLevel) / 5) + 2) * movePower * (attackingPokemon.pokemonStats[1] / defendingPokemon.pokemonStats[2]) / 50) + 2) * (randValue/100))
-    return atkDmg
+    return round(atkDmg)
 
 
-# def scrollingText(string):
-#     for char in string:
-#         print(char, end='')
-#         flush.flush()
-#         time.sleep(.05)
+def scrollingText(string):
+    if True: # TODO: Remove when done testing
+        print(string)
+        return
+    for char in string:
+        print(char, end='', flush = True)
+        time.sleep(.05)
+    # print("\n")
+
+def whoIsAttacking(userPokemon, oppoPokemon):
+    if userPokemon.pokemonStats[5] > oppoPokemon.pokemonStats[5]:
+        attacking = "user"
+    elif userPokemon.pokemonStats[5] < oppoPokemon.pokemonStats[5]:
+        attacking = "oppo"
+    else:
+        if random.randint(0,1) == 1:
+            attacking = "user"
+        else:
+            attacking = "oppo"
+    return attacking
 
 
 def main():
     """Use the main function to run code."""
-    self = pokemon()
-    self.choose_pokemon()
-    self.printStats()
+    user = pokemon()
+    user.choose_pokemon()
+    user.printStats()
 
     oppo = pokemon()
     oppo.choose_pokemon()
     oppo.printStats()
 
+    attacking = whoIsAttacking(user, oppo)
+    print("Attacking: " + attacking)
+
+    while user.pokemonStats[0] > 0 and oppo.pokemonStats[0] > 0: # FIXME: This isn't working
+        if attacking == "user":
+            oppo.takeDamage(calculateDamage(user, oppo))
+            oppo.printStats()
+            print("user attacking")
+            attacking == "oppo"
+        else:
+            user.takeDamage(calculateDamage(oppo, user))
+            user.printStats()
+            print("oppo attacking")
+            attacking == "user"
+
+    if user.pokemonStats[0] > 0:
+        print("You won!")
+    else:
+        print("You lost!")
+
 
 if __name__ == "__main__":
     main()
 
-# Next Steps:
+""# Next Steps:
 # - Implement actual battling
 # - Find applicable moves for each pokemon
 # # - Grab move power from json
