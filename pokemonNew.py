@@ -10,11 +10,19 @@ from PIL import Image
 class pokemon:
     """Class container for pokemon."""
 
-    pokemonStats = []
-    pokemonName = ""
+    pokemonHp = None
+    pokemonAttack = None
+    pokemonDefense = None
+    pokemonSpecialAttack = None
+    pokemonSpecialDefense = None
+    pokemonSpeed = None
+    pokemonType = None
+    pokemonName = None
+    pokemonSpriteURL = None
 
     def __init__(self):
         """Init function."""
+        # FIXME: Idk if I even need this constructor here or not or what
         pass
 
     def choose_pokemon(self):
@@ -29,60 +37,85 @@ class pokemon:
                 pokemonChoiceData = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemonChoice}/")
             # TODO: Add more specific Error Messages
             if pokemonChoiceData.status_code != 200:
-                scrollingText(f"Sorry, {pokemonChoice} is not a recognized pokemon. Check your spelling, maybe?")
+                scrollingText(f"Sorry, {pokemonChoice.capitalize()} is not a recognized pokemon. Check your spelling, maybe?")
             else:
-                self.pokemonName = pokemonChoiceData.json()['name']
                 break
 
-        for statNum in range(0, 6):
-            self.pokemonStats.append(pokemonChoiceData.json()['stats'][statNum]['base_stat'])
+        self.pokemonName = pokemonChoiceData.json()['name']
+        self.pokemonHp = pokemonChoiceData.json()['stats'][0]['base_stat']
+        self.pokemonAttack = pokemonChoiceData.json()['stats'][1]['base_stat']
+        self.pokemonDefense = pokemonChoiceData.json()['stats'][2]['base_stat']
+        self.pokemonSpecialAttack = pokemonChoiceData.json()['stats'][3]['base_stat']
+        self.pokemonSpecialDefense = pokemonChoiceData.json()['stats'][4]['base_stat']
+        self.pokemonSpeed = pokemonChoiceData.json()['stats'][5]['base_stat']
+        self.pokemonSpriteURL = pokemon.json()['sprites']['front_shiny']
 
-        scrollingText(f"You chose {self.pokemonName}")
+
+        try:
+            self.pokemonType = (
+                pokemonChoiceData.json()['types'][0]['type']['name'],
+                pokemonChoiceData.json()['types'][1]['type']['name']
+                )
+        except IndexError:
+            self.pokemonType = pokemonChoiceData.json()['types'][0]['type']['name']
+
+        scrollingText(f"{self.pokemonName.capitalize()} was chosen!")
 
     def printStats(self):
         """Print pokemon stats."""
-        for statNum in range(0, 6):
-            print("stat: " + str(self.pokemonStats[statNum]))
-        print("\n")
+        scrollingText(f"{self.pokemonName.capitalize()} stats:")
+        scrollingText(f"Pokemon HP: {self.pokemonHp}")
+        scrollingText(f"Pokemon Attack: {self.pokemonAttack}")
+        scrollingText(f"Pokemon Defense: {self.pokemonDefense}")
+        scrollingText(f"Pokemon Special Attack: {self.pokemonSpecialAttack}")
+        scrollingText(f"Pokemon Special Defense: {self.pokemonSpecialDefense}")
+        scrollingText(f"Pokemon Speed: {self.pokemonSpeed}")
 
     def takeDamage(self, damage):
         """Reduce pokemon hp by 'damage' amount."""
-        self.pokemonStats[0] -= damage
-        print(f"{self.pokemonName} took {damage} damage.")
+        self.pokemonHp -= damage
+        scrollingText(f"{self.pokemonName.capitalize()} took {damage} damage.")
+
+    def showSprite(self):
+        """Show pokemon sprite."""
+        sprite = Image.open(requests.get(self.pokemonSpriteURL, stream=True).raw)
+        sprite.show()
 
 
-def calculateDamage(attackingPokemon, defendingPokemon, movePower = 60):
+def calculateDamage(attackingPokemon, defendingPokemon, movePower=30):
     """Calculate damage between two pokemon."""
     pokemonLevel = 99
     randValue = random.randint(85, 100)
-    atkDmg = ((((((2 * pokemonLevel) / 5) + 2) * movePower * (attackingPokemon.pokemonStats[1] / defendingPokemon.pokemonStats[2]) / 50) + 2) * (randValue/100))
+    atkDmg = ((((((2 * pokemonLevel) / 5) + 2) * movePower * (attackingPokemon.pokemonAttack / defendingPokemon.pokemonDefense) / 50) + 2) * (randValue/100))
     return round(atkDmg)
 
 
 def scrollingText(string):
-    if True: # TODO: Remove when done testing
+    """Use to print text one character at a time."""
+    if True:  # TODO: Remove when done testing
         print(string)
         return
     for char in string:
-        print(char, end='', flush = True)
+        print(char, end='', flush=True)
         time.sleep(.05)
-    # print("\n")
+
 
 def whoIsAttacking(userPokemon, oppoPokemon):
-    if userPokemon.pokemonStats[5] > oppoPokemon.pokemonStats[5]:
+    """Use to determine which pokemon will attack first."""
+    if userPokemon.pokemonSpeed > oppoPokemon.pokemonSpeed:
         attacking = "user"
-    elif userPokemon.pokemonStats[5] < oppoPokemon.pokemonStats[5]:
+    elif userPokemon.pokemonSpeed < oppoPokemon.pokemonSpeed:
         attacking = "oppo"
     else:
-        if random.randint(0,1) == 1:
+        if random.randint(0, 1) == 1:
             attacking = "user"
         else:
             attacking = "oppo"
     return attacking
 
 
-def main():
-    """Use the main function to run code."""
+def runSimulation():
+    """Run the simulation."""
     user = pokemon()
     user.choose_pokemon()
     user.printStats()
@@ -92,30 +125,36 @@ def main():
     oppo.printStats()
 
     attacking = whoIsAttacking(user, oppo)
-    print("Attacking: " + attacking)
 
-    while user.pokemonStats[0] > 0 and oppo.pokemonStats[0] > 0: # FIXME: This isn't working
+    input("Do you want to attack? ")
+
+    while user.pokemonHp > 0 and oppo.pokemonHp > 0:
+        # FIXME: This isn't working
+        scrollingText(f"Attacking: {attacking.capitalize()}")
         if attacking == "user":
             oppo.takeDamage(calculateDamage(user, oppo))
             oppo.printStats()
-            print("user attacking")
-            attacking == "oppo"
+            attacking = "oppo"
         else:
             user.takeDamage(calculateDamage(oppo, user))
             user.printStats()
-            print("oppo attacking")
-            attacking == "user"
+            attacking = "user"
 
-    if user.pokemonStats[0] > 0:
+    if user.pokemonHp > 0:
         print("You won!")
     else:
         print("You lost!")
 
 
+def main():
+    """Use the main function to run code."""
+    runSimulation()
+
+
 if __name__ == "__main__":
     main()
 
-""# Next Steps:
+# Next Steps:
 # - Implement actual battling
 # - Find applicable moves for each pokemon
 # # - Grab move power from json
