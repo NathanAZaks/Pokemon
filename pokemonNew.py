@@ -48,7 +48,7 @@ class pokemon:
         self.pokemonSpecialAttack = pokemonChoiceData.json()['stats'][3]['base_stat']
         self.pokemonSpecialDefense = pokemonChoiceData.json()['stats'][4]['base_stat']
         self.pokemonSpeed = pokemonChoiceData.json()['stats'][5]['base_stat']
-        self.pokemonSpriteURL = pokemon.json()['sprites']['front_shiny']
+        self.pokemonSpriteURL = pokemonChoiceData.json()['sprites']['front_shiny']
 
 
         try:
