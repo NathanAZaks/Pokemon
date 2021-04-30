@@ -1,7 +1,7 @@
 from mysql.connector import connect, Error
 import requests
-import json
-# from getpass import getpass
+# import json
+from getpass import getpass
 
 create_db_query = "CREATE DATABASE pokemon_list"
 create_pokemon_table_query = """
@@ -23,9 +23,8 @@ try:
     with connect(
         host="localhost",
         # user=input("Enter username: "),
-        # password=getpass("Enter password: "),
+        password=getpass("Enter password: "),
         user="root",
-        password="***REMOVED***",
         database="pokemon_list",
     ) as connection:
         print(connection)
