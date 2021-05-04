@@ -73,13 +73,13 @@ class Player(pygame.sprite.Sprite):
         self.request = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemon}/")
         self.pokemon_name = pokemon.capitalize()
         self.pokemon_location = location
-        self.pokemon_hp = self.request.json()['stats'][0]['base_stat']
-        self.pokemon_max_hp = self.pokemon_hp
-        self.pokemon_attack = self.request.json()['stats'][1]['base_stat']
-        self.pokemon_defense = self.request.json()['stats'][2]['base_stat']
-        self.pokemon_special_attack = self.request.json()['stats'][3]['base_stat']
-        self.pokemon_special_defense = self.request.json()['stats'][4]['base_stat']
-        self.pokemon_speed = self.request.json()['stats'][5]['base_stat']
+        self.pokemon_level = 99
+        self.pokemon_base_hp = self.request.json()['stats'][0]['base_stat']
+        self.pokemon_base_attack = self.request.json()['stats'][1]['base_stat']
+        self.pokemon_base_defense = self.request.json()['stats'][2]['base_stat']
+        self.pokemon_base_special_attack = self.request.json()['stats'][3]['base_stat']
+        self.pokemon_base_special_defense = self.request.json()['stats'][4]['base_stat']
+        self.pokemon_base_speed = self.request.json()['stats'][5]['base_stat']
         self.pokemon_sprite_url = self.request.json()['sprites']['front_shiny']
         self.pokemon_first_type = self.request.json()['types'][0]['type']['name']
 
@@ -88,7 +88,9 @@ class Player(pygame.sprite.Sprite):
         except IndexError:
             self.pokemon_second_type = None
 
-        self.pokemon_hp_percentage = self.pokemon_hp/self.pokemon_max_hp
+        self.ev = 256 # actually only goes to 255
+        self.iv = 32 # actually only goes to 31
+        self.pokemon_hp_percentage = 1.0
 
         if location == PLAYER_LOCATION:
             self.pokemon_base_location = BASE_PLAYER_LOCATION
@@ -115,23 +117,67 @@ class Player(pygame.sprite.Sprite):
         else:
             self.direction = "left"
 
+        self.scale_stats_level_99()
         self.update_hp_bar()
 
     def print_stats(self):
         """Print pokemon stats."""
         print(f"{self.pokemon_name} stats:")
         print(f"Pokemon Primary Type:       {self.pokemon_first_type}")
+        print(f"Pokemon Secondary Type:     {self.pokemon_second_type}")
         print(f"Pokemon HP:                 {self.pokemon_hp}")
         print(f"Pokemon Attack:             {self.pokemon_attack}")
         print(f"Pokemon Defense:            {self.pokemon_defense}")
         print(f"Pokemon Special Attack:     {self.pokemon_special_attack}")
         print(f"Pokemon Special Defense:    {self.pokemon_special_defense}")
-        print(f"Pokemon Speed:              {self.pokemon_speed}\n")
+        print(f"Pokemon Speed:              {self.pokemon_speed}")
+        print(f"Pokemon Location:           {self.pokemon_location}")
+        print(f"Pokemon Is Moving:          {self.is_moving}\n")
+
+    def scale_stats_level_99(self):
+        """
+        Set stats scaled to level 99 stats.
+
+        Using max and uniform values for IV and EV, scale base stats to level
+        99 stat for pokemon.
+        """
+        self.pokemon_max_hp = scale_hp(
+            self.pokemon_base_hp,
+            self.iv,
+            self.ev,
+            self.pokemon_level)
+        self.pokemon_attack = scale_stat(
+            self.pokemon_base_attack,
+            self.iv,
+            self.ev,
+            self.pokemon_level)
+        self.pokemon_defense = scale_stat(
+            self.pokemon_base_defense,
+            self.iv,
+            self.ev,
+            self.pokemon_level)
+        self.pokemon_special_attack = scale_stat(
+            self.pokemon_base_special_attack,
+            self.iv,
+            self.ev,
+            self.pokemon_level)
+        self.pokemon_special_defense = scale_stat(
+            self.pokemon_base_special_defense,
+            self.iv,
+            self.ev,
+            self.pokemon_level)
+        self.pokemon_speed = scale_stat(
+            self.pokemon_base_speed,
+            self.iv,
+            self.ev,
+            self.pokemon_level)
+
+        self.pokemon_hp = self.pokemon_max_hp
 
     def take_damage(self, damage):
         """Reduce pokemon hp by damage amount and run update hp bar."""
         self.pokemon_hp -= damage
-        print(f"{self.pokemon_name} took {damage} damage.")
+        print(f"{self.pokemon_name} took {damage} damage.\n")
         self.update_hp_bar()
 
     def update_hp_bar(self):
@@ -157,7 +203,7 @@ class Player(pygame.sprite.Sprite):
         self.pokemon_location[1] += delta[1]
 
     def display(self, screen=DISPLAYSURF):
-        """Redraw spriea and hp bars on the screen."""
+        """Redraw sprite and hp bars on the screen."""
         screen.blit(self.image, self.pokemon_location)
         pygame.draw.rect(  # Background HP Bar
             surface=screen,
@@ -171,12 +217,20 @@ class Player(pygame.sprite.Sprite):
             border_radius=5)
 
 
-def calculate_damage(attacking_pokemon, defending_pokemon, movePower=30):
-    """Calculate damage between two pokemon."""
-    pokemonLevel = 99
-    randValue = random.randint(85, 100)
-    atkDmg = ((((((2 * pokemonLevel) / 5) + 2) * movePower * (attacking_pokemon.pokemon_attack / defending_pokemon.pokemon_defense) / 50) + 2) * (randValue/100))
-    return int(atkDmg)
+def calculate_damage(attacking_pokemon, defending_pokemon, move_power=180):
+    """
+    Calculate damage between two pokemon.
+
+    Damage = ((((((2/5) * level) + 2) * power * (atk/def)) / 50) + 2)
+    Damage *= targets*weather*badge*critical*random*stab*type*burn*other
+    """
+    ratio = attacking_pokemon.pokemon_attack / defending_pokemon.pokemon_defense
+    rand_value = random.randint(85, 100)
+    atk_dmg = (
+        (((0.4*attacking_pokemon.pokemon_level + 2) * move_power * ratio / 50) + 2)
+        * (rand_value/100)
+    )
+    return int(atk_dmg)
 
 
 def who_is_attacking(user_pokemon, enemy_pokemon):
@@ -192,11 +246,31 @@ def who_is_attacking(user_pokemon, enemy_pokemon):
             attacking = "enemy"
     return attacking
 
+def scale_hp(base_value, IV, EV, level):
+    """
+    Use to scale hp value from base to level 99.
+
+    HP = (((2 * Base + IV + (EV / 4)) * Level) / 100) + Level + 10
+    """
+    scaled_value = ((((2 * base_value + IV + (EV / 4)) * level) / 100)
+        + level + 10)
+    return int(scaled_value)
+
+def scale_stat(base_value, IV, EV, level):
+    """
+    Use to scale other stat values from base to level 99.
+
+    Stat = ((((2 * Base + IV + (EV / 4)) * Level) / 100) + 5) * Nature
+    Ignoring nature for now
+    """
+    # TODO: Add nature calculations
+    scaled_value = ((((2 * base_value + IV + (EV / 4)) * level) / 100) + 5)
+    return int(scaled_value)
+
 
 def print_end_message():
     """Display end message on the screen."""
     DISPLAYSURF.fill(GREEN)
-    # print(event.message)
     who_won_text = f"{loser} is unable to battle, {winner} wins!"
     who_won_size = font_small.size(who_won_text)
     who_won = font_small.render(who_won_text, True, BLACK)
@@ -205,17 +279,12 @@ def print_end_message():
     pygame.display.update()
 
 
-# Adding new user event
-HP_ZERO = pygame.USEREVENT + 1
-pokemon_fainted_event = pygame.event.Event(
-    HP_ZERO,
-    message="Pokemon fainted and is unable to battle.")
-
 # Setting up sprites
-P1 = Player("hariyama", PLAYER_LOCATION)
+P1 = Player("garchomp", PLAYER_LOCATION)
 time.sleep(1)
-P2 = Player("mantine", ENEMY_LOCATION)
+P2 = Player("goodra", ENEMY_LOCATION)
 
+# Display stats to terminal
 P1.print_stats()
 P2.print_stats()
 
@@ -224,10 +293,12 @@ all_sprites = pygame.sprite.Group()
 all_sprites.add(P1)
 all_sprites.add(P2)
 
+# Draw sprites to screen
 for entity in all_sprites:
     entity.update()
     entity.display()
 
+# Determine who attacks first
 whose_turn = who_is_attacking(P1, P2)
 
 # Game loop
@@ -244,15 +315,7 @@ while True:
                     else:  # if whose_turn == "enemy":
                         P2.is_moving = True
                         whose_turn = "user"
-        if event.type == HP_ZERO:
-            time.sleep(2)
-            for entity in all_sprites:
-                entity.kill()
-            print_end_message()
-            time.sleep(2)
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.locals.QUIT:
+        if event.type == pygame.locals.QUIT:  # System exit window button
             for entity in all_sprites:
                 entity.kill()
             pygame.quit()
@@ -260,9 +323,9 @@ while True:
 
     # Blit background
     DISPLAYSURF.fill(WHITE)
-    DISPLAYSURF.blit(background, (0, 0))  # for move_on_attack2
+    DISPLAYSURF.blit(background, (0, 0))
 
-    # Update sprite locations
+    # Update sprite locations while attack moving
     if P1.is_moving:
         if P1.direction == "right":
             if P1.pokemon_location != BASE_ENEMY_LOCATION:
@@ -307,38 +370,49 @@ while True:
         P2.update()
         P2.display()
 
-    # Don't display attack button if pokemon moving
+    # Make sure neither pokemon is moving
     if not P1.is_moving and not P2.is_moving:
+        # Display attack button only if neither is moving
         if 0 <= mouse[0] <= 120 and 0 <= mouse[1] <= 30:
             pygame.draw.rect(DISPLAYSURF, LIGHT_BLUE, [0, 0, 130, 30])
         else:
             pygame.draw.rect(DISPLAYSURF, DARK_BLUE, [0, 0, 130, 30])
         DISPLAYSURF.blit(button_text, (6, 6))
 
-    # Check if either pokemon has fainted
-    # FIXME: when one faints, the other one disappears
-    if P1.pokemon_hp <= 0 or P2.pokemon_hp <= 0:
-        pygame.event.post(pokemon_fainted_event)
-        if P1.pokemon_hp <= 0 and P2.pokemon_hp <= 0:
-            if P1.pokemon_hp > P2.pokemon_hp:
-                winner = P1.pokemon_name
-                loser = P2.pokemon_name
-            else:  # TODO: Add option for tie
+        # Check if either pokemon has fainted, after done moving
+        if P1.pokemon_hp <= 0 or P2.pokemon_hp <= 0:
+            if P1.pokemon_hp <= 0 and P2.pokemon_hp <= 0:
+                if P1.pokemon_hp > P2.pokemon_hp:
+                    winner = P1.pokemon_name
+                    loser = P2.pokemon_name
+                else:
+                    winner = P2.pokemon_name
+                    loser = P1.pokemon_name
+            elif P1.pokemon_hp <= 0:
                 winner = P2.pokemon_name
                 loser = P1.pokemon_name
-        elif P1.pokemon_hp <= 0:
-            winner = P2.pokemon_name
-            loser = P1.pokemon_name
-        elif P2.pokemon_hp <= 0:
-            winner = P1.pokemon_name
-            loser = P2.pokemon_name
+            elif P2.pokemon_hp <= 0:
+                winner = P1.pokemon_name
+                loser = P2.pokemon_name
+
+            # Display end game screen
+            time.sleep(2)
+            print_end_message()
+            for entity in all_sprites:
+                entity.kill()
+            time.sleep(2)
+            pygame.quit()
+            sys.exit()
 
     # Write all changes to screen
-    pygame.display.flip()
+    pygame.display.update()
 
     # Set FPS
     FramePerSec.tick(FPS)
 
-# TODO: Scale stats with level
 # TODO: Add attacks with special attack/defense
 # TODO: Add movesets for pokemon
+# TODO: Allow user to pick pokemon
+# TODO: Add Pokemon name and hp value to battle screen
+# TODO: Allow option to play again
+# TODO: Add music
