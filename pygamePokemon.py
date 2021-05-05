@@ -8,6 +8,10 @@ import requests
 import io
 import colorsys
 
+pygame.init()
+
+pygame.display.set_caption("Welcome to Pokemon!")
+
 LIGHT_BLUE = (59, 125, 213)
 DARK_BLUE = (7, 0, 142)
 RED = (255, 0, 0)
@@ -30,10 +34,6 @@ HP_BAR_LENGTH = 150
 SCREEN_WIDTH = 720
 SCREEN_HEIGHT = 336
 RESOLUTION = (SCREEN_WIDTH, SCREEN_HEIGHT)
-
-pygame.init()
-
-pygame.display.set_caption("It's Pokemon bitch!")
 
 FPS = 60
 FramePerSec = pygame.time.Clock()
@@ -61,7 +61,6 @@ background = pygame.transform.scale(background, RESOLUTION)
 DISPLAYSURF = pygame.display.set_mode(RESOLUTION)
 DISPLAYSURF.fill(WHITE)
 DISPLAYSURF.blit(background, (0, 0))
-
 
 class Player(pygame.sprite.Sprite):
     """Create a pokemon container."""
@@ -268,7 +267,7 @@ def scale_stat(base_value, IV, EV, level):
     return int(scaled_value)
 
 
-def print_end_message():
+def print_end_message(winner, loser):
     """Display end message on the screen."""
     DISPLAYSURF.fill(GREEN)
     who_won_text = f"{loser} is unable to battle, {winner} wins!"
@@ -278,137 +277,208 @@ def print_end_message():
     DISPLAYSURF.blit(who_won, ((SCREEN_WIDTH-who_won_size[0])/2, 150))
     pygame.display.update()
 
-
-# Setting up sprites
-P1 = Player("garchomp", PLAYER_LOCATION)
-time.sleep(1)
-P2 = Player("goodra", ENEMY_LOCATION)
-
-# Display stats to terminal
-P1.print_stats()
-P2.print_stats()
-
-# Creating sprite groups
-all_sprites = pygame.sprite.Group()
-all_sprites.add(P1)
-all_sprites.add(P2)
-
-# Draw sprites to screen
-for entity in all_sprites:
-    entity.update()
-    entity.display()
-
-# Determine who attacks first
-whose_turn = who_is_attacking(P1, P2)
-
-# Game loop
-while True:
-    for event in pygame.event.get():
-        mouse = pygame.mouse.get_pos()
-
-        if event.type == pygame.locals.MOUSEBUTTONDOWN:  # Attack button
-            if 0 <= mouse[0] <= 120 and 0 <= mouse[1] <= 30:
-                if not P1.is_moving and not P2.is_moving:
-                    if whose_turn == "user":
-                        P1.is_moving = True
-                        whose_turn = "enemy"
-                    else:  # if whose_turn == "enemy":
-                        P2.is_moving = True
-                        whose_turn = "user"
-        if event.type == pygame.locals.QUIT:  # System exit window button
-            for entity in all_sprites:
-                entity.kill()
-            pygame.quit()
-            sys.exit()
-
-    # Blit background
+def choose_pokemon():
+    print("What pokemon do you choose? (Enter a Pokemon name or 'random'): ")
     DISPLAYSURF.fill(WHITE)
     DISPLAYSURF.blit(background, (0, 0))
+    input_box = pygame.Rect(100, 100, 140, 32)  # TODO: Fix input box, ugly.
+    color = pygame.Color('dodgerblue2')
+    user_choice = ''
+    done = False
+    while True:
+        while not done:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    done = True
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        print(user_choice)
+                        # user_choice = ''
+                        done = True
+                    elif event.key == pygame.K_BACKSPACE:
+                        user_choice = user_choice[:-1]
+                    else:
+                        user_choice += event.unicode
 
-    # Update sprite locations while attack moving
-    if P1.is_moving:
-        if P1.direction == "right":
-            if P1.pokemon_location != BASE_ENEMY_LOCATION:
-                P1.update(MOVE_RIGHT)
-                P1.display()
-            else:
-                P1.direction = "left"
-                P2.take_damage(calculate_damage(P1, P2))
-        elif P1.direction == "left":
-            if P1.pokemon_location != BASE_PLAYER_LOCATION:
-                P1.update(MOVE_LEFT)
-                P1.display()
-            else:
-                P1.is_moving = False
-                P1.direction = "right"
-                P2.print_stats()
-                P1.update()
-                P1.display()
-    else:
-        P1.update()
-        P1.display()
+            DISPLAYSURF.fill(WHITE)
+            DISPLAYSURF.blit(background, (0, 0))
+            # Render the current text.
+            txt_surface = font_medium.render(user_choice, True, BLACK)
+            # Resize the box if the text is too long.
+            width = max(200, txt_surface.get_width()+10)
+            input_box.w = width
+            # Blit the text.
+            DISPLAYSURF.blit(txt_surface, (input_box.x+5, input_box.y+5))
+            # Blit the input_box rect.
+            pygame.draw.rect(DISPLAYSURF, color, input_box, 2)
 
-    if P2.is_moving:
-        if P2.direction == "left":
-            if P2.pokemon_location != BASE_PLAYER_LOCATION:
-                P2.update(MOVE_LEFT)
-                P2.display()
-            else:
-                P2.direction = "right"
-                P1.take_damage(calculate_damage(P2, P1))
-        elif P1.direction == "right":
-            if P2.pokemon_location != BASE_ENEMY_LOCATION:
-                P2.update(MOVE_RIGHT)
-                P2.display()
-            else:
-                P2.is_moving = False
-                P2.direction = "left"
-                P1.print_stats()
-                P2.update()
-                P2.display()
-    else:
-        P2.update()
-        P2.display()
+            pygame.display.flip()
 
-    # Make sure neither pokemon is moving
-    if not P1.is_moving and not P2.is_moving:
-        # Display attack button only if neither is moving
-        if 0 <= mouse[0] <= 120 and 0 <= mouse[1] <= 30:
-            pygame.draw.rect(DISPLAYSURF, LIGHT_BLUE, [0, 0, 130, 30])
+        if user_choice == "random":
+            random_number = str(random.randint(1, 898))
+            user_choice_data = requests.get(f"https://pokeapi.co/api/v2/pokemon/{random_number}/")
         else:
-            pygame.draw.rect(DISPLAYSURF, DARK_BLUE, [0, 0, 130, 30])
-        DISPLAYSURF.blit(button_text, (6, 6))
+            user_choice_data = requests.get(f"https://pokeapi.co/api/v2/pokemon/{user_choice}/")
+        # TODO: Add more specific Error Messages
+        if user_choice_data.status_code != 200:
+            print(f"Sorry, {user_choice} is not a recognized pokemon. Check your spelling, maybe?")
+            user_choice = ''
+            done = False
+        else:
+            done = True
+            print(f"{user_choice.capitalize()} was chosen!")
+            return user_choice
+    # break
 
-        # Check if either pokemon has fainted, after done moving
-        if P1.pokemon_hp <= 0 or P2.pokemon_hp <= 0:
-            if P1.pokemon_hp <= 0 and P2.pokemon_hp <= 0:
-                if P1.pokemon_hp > P2.pokemon_hp:
-                    winner = P1.pokemon_name
-                    loser = P2.pokemon_name
+
+def battle_screen(P1, P2):
+    # Setting up sprites
+    # P1 = Player("garchomp", PLAYER_LOCATION)
+    # time.sleep(1)
+    # P2 = Player("goodra", ENEMY_LOCATION)
+
+    # Display stats to terminal
+    P1.print_stats()
+    P2.print_stats()
+
+    # Creating sprite groups
+    all_sprites = pygame.sprite.Group()
+    all_sprites.add(P1)
+    all_sprites.add(P2)
+
+    # Draw sprites to screen
+    for entity in all_sprites:
+        entity.update()
+        entity.display()
+
+    # Determine who attacks first
+    whose_turn = who_is_attacking(P1, P2)
+
+    # Game loop
+    while True:
+        for event in pygame.event.get():
+            mouse = pygame.mouse.get_pos()
+
+            if event.type == pygame.locals.MOUSEBUTTONDOWN:  # Attack button
+                if 0 <= mouse[0] <= 120 and 0 <= mouse[1] <= 30:
+                    if not P1.is_moving and not P2.is_moving:
+                        if whose_turn == "user":
+                            P1.is_moving = True
+                            whose_turn = "enemy"
+                        else:  # if whose_turn == "enemy":
+                            P2.is_moving = True
+                            whose_turn = "user"
+            if event.type == pygame.locals.QUIT:  # System exit window button
+                for entity in all_sprites:
+                    entity.kill()
+                pygame.quit()
+                sys.exit()
+
+        # Blit background
+        DISPLAYSURF.fill(WHITE)
+        DISPLAYSURF.blit(background, (0, 0))
+
+        # Update sprite locations while attack moving
+        if P1.is_moving:
+            if P1.direction == "right":
+                if P1.pokemon_location != BASE_ENEMY_LOCATION:
+                    P1.update(MOVE_RIGHT)
+                    P1.display()
                 else:
+                    P1.direction = "left"
+                    P2.take_damage(calculate_damage(P1, P2))
+            elif P1.direction == "left":
+                if P1.pokemon_location != BASE_PLAYER_LOCATION:
+                    P1.update(MOVE_LEFT)
+                    P1.display()
+                else:
+                    P1.is_moving = False
+                    P1.direction = "right"
+                    P2.print_stats()
+                    P1.update()
+                    P1.display()
+        else:
+            P1.update()
+            P1.display()
+
+        if P2.is_moving:
+            if P2.direction == "left":
+                if P2.pokemon_location != BASE_PLAYER_LOCATION:
+                    P2.update(MOVE_LEFT)
+                    P2.display()
+                else:
+                    P2.direction = "right"
+                    P1.take_damage(calculate_damage(P2, P1))
+            elif P1.direction == "right":
+                if P2.pokemon_location != BASE_ENEMY_LOCATION:
+                    P2.update(MOVE_RIGHT)
+                    P2.display()
+                else:
+                    P2.is_moving = False
+                    P2.direction = "left"
+                    P1.print_stats()
+                    P2.update()
+                    P2.display()
+        else:
+            P2.update()
+            P2.display()
+
+        # Make sure neither pokemon is moving
+        if not P1.is_moving and not P2.is_moving:
+            # Display attack button only if neither is moving
+            if 0 <= mouse[0] <= 120 and 0 <= mouse[1] <= 30:
+                pygame.draw.rect(DISPLAYSURF, LIGHT_BLUE, [0, 0, 130, 30])
+            else:
+                pygame.draw.rect(DISPLAYSURF, DARK_BLUE, [0, 0, 130, 30])
+            DISPLAYSURF.blit(button_text, (6, 6))
+
+            # Check if either pokemon has fainted, after done moving
+            if P1.pokemon_hp <= 0 or P2.pokemon_hp <= 0:
+                if P1.pokemon_hp <= 0 and P2.pokemon_hp <= 0:
+                    if P1.pokemon_hp > P2.pokemon_hp:
+                        winner = P1.pokemon_name
+                        loser = P2.pokemon_name
+                    else:
+                        winner = P2.pokemon_name
+                        loser = P1.pokemon_name
+                elif P1.pokemon_hp <= 0:
                     winner = P2.pokemon_name
                     loser = P1.pokemon_name
-            elif P1.pokemon_hp <= 0:
-                winner = P2.pokemon_name
-                loser = P1.pokemon_name
-            elif P2.pokemon_hp <= 0:
-                winner = P1.pokemon_name
-                loser = P2.pokemon_name
+                elif P2.pokemon_hp <= 0:
+                    winner = P1.pokemon_name
+                    loser = P2.pokemon_name
 
-            # Display end game screen
-            time.sleep(2)
-            print_end_message()
-            for entity in all_sprites:
-                entity.kill()
-            time.sleep(2)
-            pygame.quit()
-            sys.exit()
+                # Display end game screen
+                time.sleep(2)
+                print_end_message(winner, loser)
+                for entity in all_sprites:
+                    entity.kill()
+                time.sleep(2)
+                pygame.quit()
+                sys.exit()
 
-    # Write all changes to screen
-    pygame.display.update()
+        # Write all changes to screen
+        pygame.display.update()
 
-    # Set FPS
-    FramePerSec.tick(FPS)
+        # Set FPS
+        FramePerSec.tick(FPS)
+
+def main():
+    # welcome_to_pokemon_screen()
+
+    # P1 = choose_pokemon()
+    # P2 = choose_pokemon()
+    print("Select user")
+    P1 = Player(choose_pokemon(), PLAYER_LOCATION)
+    # time.sleep(1)
+    print("Select opponent")
+    P2 = Player(choose_pokemon(), ENEMY_LOCATION)
+
+    battle_screen(P1, P2)
+
+
+if __name__ == "__main__":
+    main()
 
 # TODO: Add attacks with special attack/defense
 # TODO: Add movesets for pokemon
