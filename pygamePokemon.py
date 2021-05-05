@@ -39,9 +39,9 @@ FPS = 60
 FramePerSec = pygame.time.Clock()
 
 # Setting up fonts
-font_large = pygame.font.Font("Pokemon GB.ttf", 60)
-font_medium = pygame.font.Font("Pokemon GB.ttf", 20)
-font_small = pygame.font.Font("Pokemon GB.ttf", 14)
+font_large = pygame.font.Font("./Assets/Pokemon GB.ttf", 60)
+font_medium = pygame.font.Font("./Assets/Pokemon GB.ttf", 20)
+font_small = pygame.font.Font("./Assets/Pokemon GB.ttf", 14)
 
 # Setting up strings to print
 game_over_text = "Game Over"
@@ -55,7 +55,7 @@ welcome_text = """Hello there! Welcome to the world of Pokémon!
     For some people, Pokémon are pets. Other use them for fights.
     Myself… I study Pokémon as a profession."""
 
-background = pygame.image.load("background.png")  # 240x112
+background = pygame.image.load("./Assets/background.png")  # 240x112
 background = pygame.transform.scale(background, RESOLUTION)
 
 DISPLAYSURF = pygame.display.set_mode(RESOLUTION)
