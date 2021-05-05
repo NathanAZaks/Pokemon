@@ -19,6 +19,7 @@ GREEN = (29, 159, 74)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 YELLOW = (241, 255, 78)
+PALE_BLUE = (24, 140, 156)
 
 BASE_PLAYER_LOCATION = [95, 185]
 BASE_ENEMY_LOCATION = [455, 65]
@@ -41,7 +42,7 @@ FramePerSec = pygame.time.Clock()
 # Setting up fonts
 font_large = pygame.font.Font("./Assets/Pokemon GB.ttf", 60)
 font_medium = pygame.font.Font("./Assets/Pokemon GB.ttf", 20)
-font_small = pygame.font.Font("./Assets/Pokemon GB.ttf", 14)
+font_small = pygame.font.Font("./Assets/Pokemon GB.ttf", 12)
 
 # Setting up strings to print
 game_over_text = "Game Over"
@@ -55,8 +56,11 @@ welcome_text = """Hello there! Welcome to the world of Pokémon!
     For some people, Pokémon are pets. Other use them for fights.
     Myself… I study Pokémon as a profession."""
 
-background = pygame.image.load("./Assets/background.png")  # 240x112
+# Set up backround from 1 of 7 background options, size: 240x112
+background = pygame.image.load(f"./Assets/background{random.randint(0,6)}.png")
 background = pygame.transform.scale(background, RESOLUTION)
+
+pygame.mixer.music.load('./Assets/background_battle_music.wav')
 
 DISPLAYSURF = pygame.display.set_mode(RESOLUTION)
 DISPLAYSURF.fill(WHITE)
@@ -189,6 +193,7 @@ class Player(pygame.sprite.Sprite):
             self.pokemon_base_location[1]-5,
             150*self.pokemon_hp_percentage,
             10]
+        self.name_and_hp = f"{self.pokemon_name} : {self.pokemon_hp}/{self.pokemon_max_hp}"
 
         # HSV to RGB calculation for Green to Red hp bar color
         self.h, self.s, self.v = 0.33*self.pokemon_hp_percentage, 1, 1
@@ -204,6 +209,7 @@ class Player(pygame.sprite.Sprite):
     def display(self, screen=DISPLAYSURF):
         """Redraw sprite and hp bars on the screen."""
         screen.blit(self.image, self.pokemon_location)
+
         pygame.draw.rect(  # Background HP Bar
             surface=screen,
             color=BLACK,
@@ -214,6 +220,12 @@ class Player(pygame.sprite.Sprite):
             color=self.hp_bar_color,
             rect=self.pokemon_hp_bar_location,
             border_radius=5)
+
+        self.name_and_hp_surf = font_small.render(self.name_and_hp, True, BLACK)
+        self.name_and_hp_size = font_small.size(self.name_and_hp)
+        screen.blit(self.name_and_hp_surf,
+            (self.pokemon_base_location[0] + 75 - self.name_and_hp_size[0]/2,  # x value
+            self.pokemon_base_location[1]-20))  # y value
 
 
 def calculate_damage(attacking_pokemon, defending_pokemon, move_power=180):
@@ -266,7 +278,6 @@ def scale_stat(base_value, IV, EV, level):
     scaled_value = ((((2 * base_value + IV + (EV / 4)) * level) / 100) + 5)
     return int(scaled_value)
 
-
 def print_end_message(winner, loser):
     """Display end message on the screen."""
     DISPLAYSURF.fill(GREEN)
@@ -277,12 +288,18 @@ def print_end_message(winner, loser):
     DISPLAYSURF.blit(who_won, ((SCREEN_WIDTH-who_won_size[0])/2, 150))
     pygame.display.update()
 
-def choose_pokemon():
-    print("What pokemon do you choose? (Enter a Pokemon name or 'random'): ")
+def choose_pokemon(player_or_enemy):
+    """Use to allow user to select which pokemon."""
+    choose_pokemon_string = f"Choose {player_or_enemy} pokemon. (Enter a Pokemon name or random)"
+    choose_pokemon_surf = font_small.render(choose_pokemon_string, True, BLACK)
+    choose_pokemon_size = font_small.size(choose_pokemon_string)
     DISPLAYSURF.fill(WHITE)
     DISPLAYSURF.blit(background, (0, 0))
-    input_box = pygame.Rect(100, 100, 140, 32)  # TODO: Fix input box, ugly.
-    color = pygame.Color('dodgerblue2')
+    input_box = pygame.Rect(
+        290,
+        180,
+        140,
+        32)
     user_choice = ''
     done = False
     while True:
@@ -307,12 +324,19 @@ def choose_pokemon():
             # Resize the box if the text is too long.
             width = max(200, txt_surface.get_width()+10)
             input_box.w = width
+            input_box.x = 360 - (width/2)
+            # Blit the input_box rect.
+            pygame.draw.rect(DISPLAYSURF, PALE_BLUE, input_box)
             # Blit the text.
             DISPLAYSURF.blit(txt_surface, (input_box.x+5, input_box.y+5))
-            # Blit the input_box rect.
-            pygame.draw.rect(DISPLAYSURF, color, input_box, 2)
+            DISPLAYSURF.blit(choose_pokemon_surf,
+                (360 - (choose_pokemon_size[0]/2),
+                168 - (choose_pokemon_size[1]/2)))
+
 
             pygame.display.flip()
+
+        user_choice = user_choice.lower()
 
         if user_choice == "random":
             random_number = str(random.randint(1, 898))
@@ -326,6 +350,7 @@ def choose_pokemon():
             done = False
         else:
             done = True
+            user_choice = user_choice_data.json()['name']
             print(f"{user_choice.capitalize()} was chosen!")
             return user_choice
     # break
@@ -434,14 +459,7 @@ def battle_screen(P1, P2):
 
             # Check if either pokemon has fainted, after done moving
             if P1.pokemon_hp <= 0 or P2.pokemon_hp <= 0:
-                if P1.pokemon_hp <= 0 and P2.pokemon_hp <= 0:
-                    if P1.pokemon_hp > P2.pokemon_hp:
-                        winner = P1.pokemon_name
-                        loser = P2.pokemon_name
-                    else:
-                        winner = P2.pokemon_name
-                        loser = P1.pokemon_name
-                elif P1.pokemon_hp <= 0:
+                if P1.pokemon_hp <= 0:
                     winner = P2.pokemon_name
                     loser = P1.pokemon_name
                 elif P2.pokemon_hp <= 0:
@@ -466,15 +484,16 @@ def battle_screen(P1, P2):
 def main():
     # welcome_to_pokemon_screen()
 
-    # P1 = choose_pokemon()
-    # P2 = choose_pokemon()
-    print("Select user")
-    P1 = Player(choose_pokemon(), PLAYER_LOCATION)
-    # time.sleep(1)
-    print("Select opponent")
-    P2 = Player(choose_pokemon(), ENEMY_LOCATION)
+    pygame.mixer.music.play(-1)
+
+    print("Select user pokemon.")
+    P1 = Player(choose_pokemon("player"), PLAYER_LOCATION)
+    print("Select opponent pokemon.")
+    P2 = Player(choose_pokemon("enemy"), ENEMY_LOCATION)
 
     battle_screen(P1, P2)
+
+    pygame.mixer.music.stop()
 
 
 if __name__ == "__main__":
@@ -482,7 +501,4 @@ if __name__ == "__main__":
 
 # TODO: Add attacks with special attack/defense
 # TODO: Add movesets for pokemon
-# TODO: Allow user to pick pokemon
-# TODO: Add Pokemon name and hp value to battle screen
 # TODO: Allow option to play again
-# TODO: Add music
