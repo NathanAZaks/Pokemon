@@ -5,13 +5,17 @@ import sys
 import random
 import time
 import requests
-import io
-import colorsys
+# import io
+# import colorsys
+from playerClass import Player
 
+# Init pygame
 pygame.init()
 
+# Label window
 pygame.display.set_caption("Welcome to Pokemon!")
 
+# Set up some globals
 LIGHT_BLUE = (59, 125, 213)
 DARK_BLUE = (7, 0, 142)
 RED = (255, 0, 0)
@@ -40,16 +44,16 @@ FPS = 60
 FramePerSec = pygame.time.Clock()
 
 # Setting up fonts
-font_large = pygame.font.Font("./Assets/Pokemon GB.ttf", 60)
-font_medium = pygame.font.Font("./Assets/Pokemon GB.ttf", 20)
-font_small = pygame.font.Font("./Assets/Pokemon GB.ttf", 12)
+FONT_LARGE = pygame.font.Font("./Assets/Pokemon GB.ttf", 60)
+FONT_MEDIUM = pygame.font.Font("./Assets/Pokemon GB.ttf", 20)
+FONT_SMALL = pygame.font.Font("./Assets/Pokemon GB.ttf", 12)
 
 # Setting up strings to print
 game_over_text = "Game Over"
-game_over = font_large.render(game_over_text, True, BLACK)
-game_over_size = font_large = font_large.size(game_over_text)
+game_over = FONT_LARGE.render(game_over_text, True, BLACK)
+game_over_size = FONT_LARGE = FONT_LARGE.size(game_over_text)
 
-button_text = font_medium.render("Attack", True, YELLOW)
+# TODO: Add welcome text to opening screen
 welcome_text = """Hello there! Welcome to the world of Pokémon!
     My name is Oak! People call me the Pokémon Prof!
     This world is inhabited by creatures called Pokémon!
@@ -60,175 +64,16 @@ welcome_text = """Hello there! Welcome to the world of Pokémon!
 background = pygame.image.load(f"./Assets/background{random.randint(0,6)}.png")
 background = pygame.transform.scale(background, RESOLUTION)
 
+# Load background music for player
 pygame.mixer.music.load('./Assets/background_battle_music.wav')
 
+# Set up game window and print background to screen
 DISPLAYSURF = pygame.display.set_mode(RESOLUTION)
 DISPLAYSURF.fill(WHITE)
 DISPLAYSURF.blit(background, (0, 0))
 
-class Player(pygame.sprite.Sprite):
-    """Create a pokemon container."""
 
-    def __init__(self, pokemon, location):
-        """Create an instance of the class."""
-        super().__init__()
-
-        self.request = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemon}/")
-        self.pokemon_name = pokemon.capitalize()
-        self.pokemon_location = location
-        self.pokemon_level = 99
-        self.pokemon_base_hp = self.request.json()['stats'][0]['base_stat']
-        self.pokemon_base_attack = self.request.json()['stats'][1]['base_stat']
-        self.pokemon_base_defense = self.request.json()['stats'][2]['base_stat']
-        self.pokemon_base_special_attack = self.request.json()['stats'][3]['base_stat']
-        self.pokemon_base_special_defense = self.request.json()['stats'][4]['base_stat']
-        self.pokemon_base_speed = self.request.json()['stats'][5]['base_stat']
-        self.pokemon_sprite_url = self.request.json()['sprites']['front_shiny']
-        self.pokemon_first_type = self.request.json()['types'][0]['type']['name']
-
-        try:
-            self.pokemon_second_type = self.request.json()['types'][1]['type']['name']
-        except IndexError:
-            self.pokemon_second_type = None
-
-        self.ev = 256 # actually only goes to 255
-        self.iv = 32 # actually only goes to 31
-        self.pokemon_hp_percentage = 1.0
-
-        if location == PLAYER_LOCATION:
-            self.pokemon_base_location = BASE_PLAYER_LOCATION
-        else:
-            self.pokemon_base_location = BASE_ENEMY_LOCATION
-
-        self.image = requests.get(self.pokemon_sprite_url)
-        self.image = io.BytesIO(self.image.content)
-        self.image = pygame.image.load(self.image)
-        self.image = pygame.transform.scale(self.image, SPRITE_SIZE)
-        self.surf = pygame.Surface(SPRITE_SIZE)
-        self.rect = self.image.get_rect(topleft=self.pokemon_location)
-
-        self.pokemon_bg_hp_bar_location = [
-            self.pokemon_base_location[0],
-            self.pokemon_base_location[1]-5,
-            150,
-            10]
-
-        self.is_moving = False
-
-        if self.pokemon_location == PLAYER_LOCATION:
-            self.direction = "right"
-        else:
-            self.direction = "left"
-
-        self.scale_stats_level_99()
-        self.update_hp_bar()
-
-    def print_stats(self):
-        """Print pokemon stats."""
-        print(f"{self.pokemon_name} stats:")
-        print(f"Pokemon Primary Type:       {self.pokemon_first_type}")
-        print(f"Pokemon Secondary Type:     {self.pokemon_second_type}")
-        print(f"Pokemon HP:                 {self.pokemon_hp}")
-        print(f"Pokemon Attack:             {self.pokemon_attack}")
-        print(f"Pokemon Defense:            {self.pokemon_defense}")
-        print(f"Pokemon Special Attack:     {self.pokemon_special_attack}")
-        print(f"Pokemon Special Defense:    {self.pokemon_special_defense}")
-        print(f"Pokemon Speed:              {self.pokemon_speed}")
-        print(f"Pokemon Location:           {self.pokemon_location}")
-        print(f"Pokemon Is Moving:          {self.is_moving}\n")
-
-    def scale_stats_level_99(self):
-        """
-        Set stats scaled to level 99 stats.
-
-        Using max and uniform values for IV and EV, scale base stats to level
-        99 stat for pokemon.
-        """
-        self.pokemon_max_hp = scale_hp(
-            self.pokemon_base_hp,
-            self.iv,
-            self.ev,
-            self.pokemon_level)
-        self.pokemon_attack = scale_stat(
-            self.pokemon_base_attack,
-            self.iv,
-            self.ev,
-            self.pokemon_level)
-        self.pokemon_defense = scale_stat(
-            self.pokemon_base_defense,
-            self.iv,
-            self.ev,
-            self.pokemon_level)
-        self.pokemon_special_attack = scale_stat(
-            self.pokemon_base_special_attack,
-            self.iv,
-            self.ev,
-            self.pokemon_level)
-        self.pokemon_special_defense = scale_stat(
-            self.pokemon_base_special_defense,
-            self.iv,
-            self.ev,
-            self.pokemon_level)
-        self.pokemon_speed = scale_stat(
-            self.pokemon_base_speed,
-            self.iv,
-            self.ev,
-            self.pokemon_level)
-
-        self.pokemon_hp = self.pokemon_max_hp
-
-    def take_damage(self, damage):
-        """Reduce pokemon hp by damage amount and run update hp bar."""
-        self.pokemon_hp -= damage
-        print(f"{self.pokemon_name} took {damage} damage.\n")
-        self.update_hp_bar()
-
-    def update_hp_bar(self):
-        """Update hp bar percent and color."""
-        self.pokemon_hp_percentage = self.pokemon_hp/self.pokemon_max_hp
-        if self.pokemon_hp_percentage < 0:
-            self.pokemon_hp_percentage = 0
-        self.pokemon_hp_bar_location = [
-            self.pokemon_base_location[0],
-            self.pokemon_base_location[1]-5,
-            150*self.pokemon_hp_percentage,
-            10]
-        self.name_and_hp = f"{self.pokemon_name} : {self.pokemon_hp}/{self.pokemon_max_hp}"
-
-        # HSV to RGB calculation for Green to Red hp bar color
-        self.h, self.s, self.v = 0.33*self.pokemon_hp_percentage, 1, 1
-        self.r, self.g, self.b = colorsys.hsv_to_rgb(self.h, self.s, self.v)
-        self.hp_bar_color = [int(255*self.r), int(255*self.g), int(255*self.b)]
-
-    def update(self, delta=[0, 0]):
-        """Update location of sprite."""
-        self.rect.move_ip(delta)  # delta is (x, y)
-        self.pokemon_location[0] += delta[0]
-        self.pokemon_location[1] += delta[1]
-
-    def display(self, screen=DISPLAYSURF):
-        """Redraw sprite and hp bars on the screen."""
-        screen.blit(self.image, self.pokemon_location)
-
-        pygame.draw.rect(  # Background HP Bar
-            surface=screen,
-            color=BLACK,
-            rect=self.pokemon_bg_hp_bar_location,
-            border_radius=5)
-        pygame.draw.rect(  # Colored HP Bar
-            surface=screen,
-            color=self.hp_bar_color,
-            rect=self.pokemon_hp_bar_location,
-            border_radius=5)
-
-        self.name_and_hp_surf = font_small.render(self.name_and_hp, True, BLACK)
-        self.name_and_hp_size = font_small.size(self.name_and_hp)
-        screen.blit(self.name_and_hp_surf,
-            (self.pokemon_base_location[0] + 75 - self.name_and_hp_size[0]/2,  # x value
-            self.pokemon_base_location[1]-20))  # y value
-
-
-def calculate_damage(attacking_pokemon, defending_pokemon, move_power=180):
+def calculate_damage(attacking_pokemon, defending_pokemon, move_power=280):
     """
     Calculate damage between two pokemon.
 
@@ -257,42 +102,59 @@ def who_is_attacking(user_pokemon, enemy_pokemon):
             attacking = "enemy"
     return attacking
 
-def scale_hp(base_value, IV, EV, level):
-    """
-    Use to scale hp value from base to level 99.
-
-    HP = (((2 * Base + IV + (EV / 4)) * Level) / 100) + Level + 10
-    """
-    scaled_value = ((((2 * base_value + IV + (EV / 4)) * level) / 100)
-        + level + 10)
-    return int(scaled_value)
-
-def scale_stat(base_value, IV, EV, level):
-    """
-    Use to scale other stat values from base to level 99.
-
-    Stat = ((((2 * Base + IV + (EV / 4)) * Level) / 100) + 5) * Nature
-    Ignoring nature for now
-    """
-    # TODO: Add nature calculations
-    scaled_value = ((((2 * base_value + IV + (EV / 4)) * level) / 100) + 5)
-    return int(scaled_value)
 
 def print_end_message(winner, loser):
     """Display end message on the screen."""
     DISPLAYSURF.fill(GREEN)
+
+    play_again_surf = FONT_MEDIUM.render("Play Again", True, BLACK)
+    exit_now_surf = FONT_MEDIUM.render("Exit Now", True, BLACK)
+
     who_won_text = f"{loser} is unable to battle, {winner} wins!"
-    who_won_size = font_small.size(who_won_text)
-    who_won = font_small.render(who_won_text, True, BLACK)
+    who_won_size = FONT_SMALL.size(who_won_text)
+    who_won = FONT_SMALL.render(who_won_text, True, BLACK)
+
     DISPLAYSURF.blit(game_over, ((SCREEN_WIDTH-game_over_size[0])/2, 50))
     DISPLAYSURF.blit(who_won, ((SCREEN_WIDTH-who_won_size[0])/2, 150))
-    pygame.display.update()
+
+    while True:
+        mouse = pygame.mouse.get_pos()
+        for event in pygame.event.get():
+            if event.type == pygame.locals.MOUSEBUTTONDOWN:  # Attack button
+                if 50 <= mouse[0] <= 260 and 200 <= mouse[1] <= 230:  # play again
+                    print("return from play again")
+                    return
+                elif 300 <= mouse[0] <= 470 and 200 <= mouse[1] <= 230:  # quit
+                    still_playing = False
+                    pygame.quit()
+                    sys.exit()
+            if event.type == pygame.locals.QUIT:  # System exit window button
+                pygame.quit()
+                sys.exit()
+        if 50 <= mouse[0] <= 260 and 200 <= mouse[1] <= 230: # play again
+            play_again_color = LIGHT_BLUE
+        else:
+            play_again_color = DARK_BLUE
+        if 300 <= mouse[0] <= 470 and 200 <= mouse[1] <= 230: # exit now
+            exit_now_color = LIGHT_BLUE
+        else:
+            exit_now_color = DARK_BLUE
+
+        pygame.draw.rect(DISPLAYSURF, play_again_color, [50, 200, 210, 30])
+        pygame.draw.rect(DISPLAYSURF, exit_now_color, [300, 200, 170, 30])
+        DISPLAYSURF.blit(play_again_surf, (55, 205))
+        DISPLAYSURF.blit(exit_now_surf, (305, 205))
+
+        # Write all changes to screen
+        pygame.display.update()
+        FramePerSec.tick(FPS)
+
 
 def choose_pokemon(player_or_enemy):
     """Use to allow user to select which pokemon."""
     choose_pokemon_string = f"Choose {player_or_enemy} pokemon. (Enter a Pokemon name or random)"
-    choose_pokemon_surf = font_small.render(choose_pokemon_string, True, BLACK)
-    choose_pokemon_size = font_small.size(choose_pokemon_string)
+    choose_pokemon_surf = FONT_SMALL.render(choose_pokemon_string, True, BLACK)
+    choose_pokemon_size = FONT_SMALL.size(choose_pokemon_string)
     DISPLAYSURF.fill(WHITE)
     DISPLAYSURF.blit(background, (0, 0))
     input_box = pygame.Rect(
@@ -307,10 +169,11 @@ def choose_pokemon(player_or_enemy):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     done = True
+                    pygame.quit()
+                    sys.exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
                         print(user_choice)
-                        # user_choice = ''
                         done = True
                     elif event.key == pygame.K_BACKSPACE:
                         user_choice = user_choice[:-1]
@@ -319,26 +182,30 @@ def choose_pokemon(player_or_enemy):
 
             DISPLAYSURF.fill(WHITE)
             DISPLAYSURF.blit(background, (0, 0))
+
             # Render the current text.
-            txt_surface = font_medium.render(user_choice, True, BLACK)
+            txt_surface = FONT_MEDIUM.render(user_choice, True, BLACK)
+
             # Resize the box if the text is too long.
             width = max(200, txt_surface.get_width()+10)
             input_box.w = width
             input_box.x = 360 - (width/2)
+
             # Blit the input_box rect.
             pygame.draw.rect(DISPLAYSURF, PALE_BLUE, input_box)
+
             # Blit the text.
             DISPLAYSURF.blit(txt_surface, (input_box.x+5, input_box.y+5))
             DISPLAYSURF.blit(choose_pokemon_surf,
                 (360 - (choose_pokemon_size[0]/2),
                 168 - (choose_pokemon_size[1]/2)))
 
-
-            pygame.display.flip()
+            pygame.display.update()
+            FramePerSec.tick(FPS)
 
         user_choice = user_choice.lower()
 
-        if user_choice == "random":
+        if user_choice == "random" or user_choice == "":
             random_number = str(random.randint(1, 898))
             user_choice_data = requests.get(f"https://pokeapi.co/api/v2/pokemon/{random_number}/")
         else:
@@ -353,14 +220,11 @@ def choose_pokemon(player_or_enemy):
             user_choice = user_choice_data.json()['name']
             print(f"{user_choice.capitalize()} was chosen!")
             return user_choice
-    # break
 
 
 def battle_screen(P1, P2):
-    # Setting up sprites
-    # P1 = Player("garchomp", PLAYER_LOCATION)
-    # time.sleep(1)
-    # P2 = Player("goodra", ENEMY_LOCATION)
+    # Set up attack button text
+    button_text = FONT_MEDIUM.render("Attack", True, YELLOW)
 
     # Display stats to terminal
     P1.print_stats()
@@ -381,11 +245,12 @@ def battle_screen(P1, P2):
 
     # Game loop
     while True:
+        mouse = pygame.mouse.get_pos()
         for event in pygame.event.get():
-            mouse = pygame.mouse.get_pos()
 
-            if event.type == pygame.locals.MOUSEBUTTONDOWN:  # Attack button
-                if 0 <= mouse[0] <= 120 and 0 <= mouse[1] <= 30:
+            if event.type == pygame.locals.MOUSEBUTTONDOWN:
+                # Attack button
+                if 0 <= mouse[0] <= 130 and 0 <= mouse[1] <= 30:
                     if not P1.is_moving and not P2.is_moving:
                         if whose_turn == "user":
                             P1.is_moving = True
@@ -393,7 +258,8 @@ def battle_screen(P1, P2):
                         else:  # if whose_turn == "enemy":
                             P2.is_moving = True
                             whose_turn = "user"
-            if event.type == pygame.locals.QUIT:  # System exit window button
+            # System exit window button, close game
+            if event.type == pygame.locals.QUIT:
                 for entity in all_sprites:
                     entity.kill()
                 pygame.quit()
@@ -451,13 +317,14 @@ def battle_screen(P1, P2):
         # Make sure neither pokemon is moving
         if not P1.is_moving and not P2.is_moving:
             # Display attack button only if neither is moving
-            if 0 <= mouse[0] <= 120 and 0 <= mouse[1] <= 30:
-                pygame.draw.rect(DISPLAYSURF, LIGHT_BLUE, [0, 0, 130, 30])
+            if 0 <= mouse[0] <= 130 and 0 <= mouse[1] <= 30:
+                attack_button_color = LIGHT_BLUE
             else:
-                pygame.draw.rect(DISPLAYSURF, DARK_BLUE, [0, 0, 130, 30])
+                attack_button_color = DARK_BLUE
+            pygame.draw.rect(DISPLAYSURF, attack_button_color, [0, 0, 130, 30])
             DISPLAYSURF.blit(button_text, (6, 6))
 
-            # Check if either pokemon has fainted, after done moving
+            # Check if either pokemon has fainted -> game over screen
             if P1.pokemon_hp <= 0 or P2.pokemon_hp <= 0:
                 if P1.pokemon_hp <= 0:
                     winner = P2.pokemon_name
@@ -469,29 +336,33 @@ def battle_screen(P1, P2):
                 # Display end game screen
                 time.sleep(2)
                 print_end_message(winner, loser)
+                print("can i get here bro")
                 for entity in all_sprites:
                     entity.kill()
-                time.sleep(2)
-                pygame.quit()
-                sys.exit()
+                return
 
         # Write all changes to screen
         pygame.display.update()
-
-        # Set FPS
         FramePerSec.tick(FPS)
 
+
 def main():
-    # welcome_to_pokemon_screen()
+    # TODO: add welcome_to_pokemon_screen()
 
-    pygame.mixer.music.play(-1)
+    # initialize outer game loop
+    still_playing = True
 
-    print("Select user pokemon.")
-    P1 = Player(choose_pokemon("player"), PLAYER_LOCATION)
-    print("Select opponent pokemon.")
-    P2 = Player(choose_pokemon("enemy"), ENEMY_LOCATION)
+    # play background music on loop
+    # pygame.mixer.music.play(-1)
 
-    battle_screen(P1, P2)
+    while still_playing:
+        print("Select user pokemon.")
+        P1 = Player(choose_pokemon("player"), PLAYER_LOCATION, DISPLAYSURF)
+        print("Select opponent pokemon.")
+        P2 = Player(choose_pokemon("enemy"), ENEMY_LOCATION, DISPLAYSURF)
+
+        battle_screen(P1, P2)
+        print("Do i even get here?")
 
     pygame.mixer.music.stop()
 
@@ -501,4 +372,4 @@ if __name__ == "__main__":
 
 # TODO: Add attacks with special attack/defense
 # TODO: Add movesets for pokemon
-# TODO: Allow option to play again
+# TODO: Split code into other files
