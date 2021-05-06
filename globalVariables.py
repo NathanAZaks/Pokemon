@@ -1,0 +1,27 @@
+"""File holds all global variables: colors, locations, sizes."""
+# Set up some globals
+LIGHT_BLUE = (59, 125, 213)
+DARK_BLUE = (7, 0, 142)
+RED = (255, 0, 0)
+GREEN = (29, 159, 74)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+YELLOW = (241, 255, 78)
+PALE_BLUE = (24, 140, 156)
+
+BASE_PLAYER_LOCATION = [95, 185]
+BASE_ENEMY_LOCATION = [455, 65]
+PLAYER_LOCATION = [95, 185]
+ENEMY_LOCATION = [455, 65]
+
+MOVE_LEFT = (-6, 2)
+MOVE_RIGHT = (6, -2)
+
+SPRITE_SIZE = (150, 150)
+HP_BAR_LENGTH = 150
+
+SCREEN_WIDTH = 720
+SCREEN_HEIGHT = 336
+RESOLUTION = (SCREEN_WIDTH, SCREEN_HEIGHT)
+
+FPS = 60

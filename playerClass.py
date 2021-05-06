@@ -1,24 +1,11 @@
+"""Holds player class and functions to edit player class."""
 import pygame
 import requests
 import io
 import colorsys
+import globalVariables as gv
 
 pygame.init()
-
-BASE_PLAYER_LOCATION = [95, 185]
-BASE_ENEMY_LOCATION = [455, 65]
-
-SPRITE_SIZE = (150, 150)
-
-# Set up some globals
-LIGHT_BLUE = (59, 125, 213)
-DARK_BLUE = (7, 0, 142)
-RED = (255, 0, 0)
-GREEN = (29, 159, 74)
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-YELLOW = (241, 255, 78)
-PALE_BLUE = (24, 140, 156)
 
 # Setting up fonts
 FONT_LARGE = pygame.font.Font("./Assets/Pokemon GB.ttf", 60)
@@ -31,8 +18,11 @@ def scale_hp(base_value, IV, EV, level):
     Use to scale hp value from base to level 99.
 
     HP = (((2 * Base + IV + (EV / 4)) * Level) / 100) + Level + 10
+
+    Returns int of scaled up hp stat value.
     """
-    scaled_value = ((((2 * base_value + IV + (EV / 4)) * level) / 100)
+    scaled_value = (
+        (((2 * base_value + IV + (EV / 4)) * level) / 100)
         + level + 10)
     return int(scaled_value)
 
@@ -43,6 +33,8 @@ def scale_stat(base_value, IV, EV, level):
 
     Stat = ((((2 * Base + IV + (EV / 4)) * Level) / 100) + 5) * Nature
     Ignoring nature for now
+
+    Returns int of scaled up stat value.
     """
     # TODO: Add nature calculations
     scaled_value = ((((2 * base_value + IV + (EV / 4)) * level) / 100) + 5)
@@ -58,7 +50,9 @@ class Player(pygame.sprite.Sprite):
 
         self.screen = screen
 
-        self.request = requests.get(f"https://pokeapi.co/api/v2/pokemon/{pokemon}/")
+        self.request = requests.get(
+            f"https://pokeapi.co/api/v2/pokemon/{pokemon}/")
+
         self.pokemon_name = pokemon.capitalize()
         self.pokemon_location = location
         self.pokemon_level = 99
@@ -80,16 +74,16 @@ class Player(pygame.sprite.Sprite):
         self.iv = 32
         self.pokemon_hp_percentage = 1.0
 
-        if location == BASE_PLAYER_LOCATION:
-            self.pokemon_base_location = BASE_PLAYER_LOCATION
+        if location == gv.BASE_PLAYER_LOCATION:
+            self.pokemon_base_location = gv.BASE_PLAYER_LOCATION
         else:
-            self.pokemon_base_location = BASE_ENEMY_LOCATION
+            self.pokemon_base_location = gv.BASE_ENEMY_LOCATION
 
         self.image = requests.get(self.pokemon_sprite_url)
         self.image = io.BytesIO(self.image.content)
         self.image = pygame.image.load(self.image)
-        self.image = pygame.transform.scale(self.image, SPRITE_SIZE)
-        self.surf = pygame.Surface(SPRITE_SIZE)
+        self.image = pygame.transform.scale(self.image, gv.SPRITE_SIZE)
+        self.surf = pygame.Surface(gv.SPRITE_SIZE)
         self.rect = self.image.get_rect(topleft=self.pokemon_location)
 
         self.pokemon_bg_hp_bar_location = [
@@ -100,7 +94,7 @@ class Player(pygame.sprite.Sprite):
 
         self.is_moving = False
 
-        if self.pokemon_location == BASE_PLAYER_LOCATION:
+        if self.pokemon_location == gv.BASE_PLAYER_LOCATION:
             self.direction = "right"
         else:
             self.direction = "left"
@@ -119,8 +113,6 @@ class Player(pygame.sprite.Sprite):
         print(f"Pokemon Special Attack:     {self.pokemon_special_attack}")
         print(f"Pokemon Special Defense:    {self.pokemon_special_defense}")
         print(f"Pokemon Speed:              {self.pokemon_speed}")
-        print(f"Pokemon Location:           {self.pokemon_location}")
-        print(f"Pokemon Is Moving:          {self.is_moving}\n")
 
     def scale_stats_level_99(self):
         """
@@ -178,7 +170,8 @@ class Player(pygame.sprite.Sprite):
             self.pokemon_base_location[1]-5,
             150*self.pokemon_hp_percentage,
             10]
-        self.name_and_hp = f"{self.pokemon_name} : {self.pokemon_hp}/{self.pokemon_max_hp}"
+        self.name_and_hp = (
+            f"{self.pokemon_name} : {self.pokemon_hp}/{self.pokemon_max_hp}")
 
         # HSV to RGB calculation for Green to Red hp bar color
         self.h, self.s, self.v = 0.33*self.pokemon_hp_percentage, 1, 1
@@ -197,7 +190,7 @@ class Player(pygame.sprite.Sprite):
 
         pygame.draw.rect(  # Background HP Bar
             surface=self.screen,
-            color=BLACK,
+            color=gv.BLACK,
             rect=self.pokemon_bg_hp_bar_location,
             border_radius=5)
         pygame.draw.rect(  # Colored HP Bar
@@ -206,8 +199,12 @@ class Player(pygame.sprite.Sprite):
             rect=self.pokemon_hp_bar_location,
             border_radius=5)
 
-        self.name_and_hp_surf = FONT_SMALL.render(self.name_and_hp, True, BLACK)
+        self.name_and_hp_surf = FONT_SMALL.render(
+            self.name_and_hp,
+            True,
+            gv.BLACK)
         self.name_and_hp_size = FONT_SMALL.size(self.name_and_hp)
-        self.screen.blit(self.name_and_hp_surf,
-            (self.pokemon_base_location[0] + 75 - self.name_and_hp_size[0]/2,  # x value
-            self.pokemon_base_location[1]-20))  # y value
+        self.screen.blit(
+            self.name_and_hp_surf,
+            (self.pokemon_base_location[0] + 75 - self.name_and_hp_size[0]/2,
+                self.pokemon_base_location[1]-20))
