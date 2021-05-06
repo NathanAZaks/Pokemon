@@ -14,6 +14,7 @@ pygame.init()
 # Label window
 pygame.display.set_caption("Welcome to Pokemon!")
 
+# Set up FPS
 FramePerSec = pygame.time.Clock()
 
 # Setting up fonts
@@ -51,10 +52,14 @@ def calculate_damage(attacking_pokemon, defending_pokemon, move_power=280):
     Calculate damage between two pokemon.
 
     Damage = ((((((2/5) * level) + 2) * power * (atk/def)) / 50) + 2)
-    Damage *= targets*weather*badge*critical*random*stab*type*burn*other
+    Damage *= random*targets*weather*badge*critical*stab*type*burn
 
+    Currently ignoring second line of damage calculations other than random.
+
+    Accepts two Player class instances, move power, move type.
     Returns int value of damage to be taken.
     """
+    # ratio between attack and defense
     ratio = (
         attacking_pokemon.pokemon_attack / defending_pokemon.pokemon_defense)
     rand_value = random.randint(85, 100)
@@ -70,7 +75,8 @@ def who_is_attacking(user_pokemon, enemy_pokemon):
     """
     Use to determine which pokemon will attack first.
 
-    Returns string 'user' or 'enemy' based on who's faster. If same, random.
+    Accepts two Player class instances.
+    Returns string 'user' or 'enemy' based on who's faster. If same -> random.
     """
     if user_pokemon.pokemon_speed > enemy_pokemon.pokemon_speed:
         attacking = "user"
@@ -85,7 +91,12 @@ def who_is_attacking(user_pokemon, enemy_pokemon):
 
 
 def print_end_message(winner, loser):
-    """Display end message on the screen."""
+    """
+    Display end message on the screen.
+
+    Accepts two strings: names of winner and loser pokemon.
+    Renders end screen & winner message with buttons to play again or end.
+    """
     # Fill screen
     # TODO: Display game over background screen
     DISPLAYSURF.fill(gv.GREEN)
@@ -94,20 +105,20 @@ def print_end_message(winner, loser):
     play_again_surf = FONT_MEDIUM.render("Play Again", True, gv.BLACK)
     exit_now_surf = FONT_MEDIUM.render("Exit Now", True, gv.BLACK)
 
-    # Render string of winner
+    # Render  winner string
     who_won_text = f"{loser} is unable to battle, {winner} wins!"
     who_won_size = FONT_SMALL.size(who_won_text)
     who_won = FONT_SMALL.render(who_won_text, True, gv.BLACK)
 
-    # Display centered game over mesasges
+    # Display game over mesasges centered on screen
     DISPLAYSURF.blit(game_over, ((gv.SCREEN_WIDTH-game_over_size[0])/2, 50))
     DISPLAYSURF.blit(who_won, ((gv.SCREEN_WIDTH-who_won_size[0])/2, 150))
 
-    # screen main loop
+    # end message main loop
     while True:
         mouse = pygame.mouse.get_pos()
         for event in pygame.event.get():
-            if event.type == pygame.locals.MOUSEBUTTONDOWN:  # Attack button
+            if event.type == pygame.locals.MOUSEBUTTONDOWN:
                 # If hit play again -> exit end message
                 if 50 <= mouse[0] <= 260 and 200 <= mouse[1] <= 230:
                     return
@@ -115,26 +126,28 @@ def print_end_message(winner, loser):
                 elif 300 <= mouse[0] <= 470 and 200 <= mouse[1] <= 230:
                     pygame.quit()
                     sys.exit()
-            if event.type == pygame.locals.QUIT:  # System exit window button
+            # If hit window X -> Exit
+            if event.type == pygame.locals.QUIT:
                 pygame.quit()
                 sys.exit()
 
         # Draw play again button, change color if hovering
-        if 50 <= mouse[0] <= 260 and 200 <= mouse[1] <= 230:
-            play_again_color = gv.gv.LIGHT_BLUE
+        if 75 <= mouse[0] <= 285 and 200 <= mouse[1] <= 230:
+            play_again_color = gv.LIGHT_BLUE
         else:
             play_again_color = gv.DARK_BLUE
 
         # Draw exit now button, change color if hovering
-        if 300 <= mouse[0] <= 470 and 200 <= mouse[1] <= 230:
+        if 455 <= mouse[0] <= 625 and 200 <= mouse[1] <= 230:
             exit_now_color = gv.LIGHT_BLUE
         else:
             exit_now_color = gv.DARK_BLUE
 
-        pygame.draw.rect(DISPLAYSURF, play_again_color, [50, 200, 210, 30])
-        pygame.draw.rect(DISPLAYSURF, exit_now_color, [300, 200, 170, 30])
-        DISPLAYSURF.blit(play_again_surf, (55, 205))
-        DISPLAYSURF.blit(exit_now_surf, (305, 205))
+        # Draw play again and exit texts and buttons
+        pygame.draw.rect(DISPLAYSURF, play_again_color, [75, 200, 210, 30])
+        pygame.draw.rect(DISPLAYSURF, exit_now_color, [455, 200, 170, 30])
+        DISPLAYSURF.blit(play_again_surf, (80, 205))
+        DISPLAYSURF.blit(exit_now_surf, (460, 205))
 
         # Write all changes to screen
         pygame.display.update()
@@ -142,7 +155,13 @@ def print_end_message(winner, loser):
 
 
 def choose_pokemon(player_or_enemy):
-    """Use to allow user to select which pokemon."""
+    """
+    Use to allow user to select which pokemon.
+
+    Accepts string "player" or "enemy" to determine what to print to screen.
+    Returns .json() list from request object.
+    """
+    # Render choose pokemon string
     choose_pokemon_string = (
         f"Choose {player_or_enemy} pokemon. (Enter a Pokemon name or random)")
     choose_pokemon_surf = FONT_SMALL.render(
@@ -150,6 +169,8 @@ def choose_pokemon(player_or_enemy):
         True,
         gv.BLACK)
     choose_pokemon_size = FONT_SMALL.size(choose_pokemon_string)
+
+    # Set up background for choosing pokemon
     DISPLAYSURF.fill(gv.WHITE)
     DISPLAYSURF.blit(background, (0, 0))
     input_box = pygame.Rect(
@@ -157,9 +178,14 @@ def choose_pokemon(player_or_enemy):
         180,
         140,
         32)
+
+    # String to hold user input
     user_choice = ''
     done = False
+
+    # Main choose pokemon screen loop
     while True:
+        # Loop while haven't chosen pokemon yet
         while not done:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -167,40 +193,47 @@ def choose_pokemon(player_or_enemy):
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
+                    # break loop if hit enter
                     if event.key == pygame.K_RETURN:
                         print(user_choice)
                         done = True
+                    # truncate string if backspace
                     elif event.key == pygame.K_BACKSPACE:
                         user_choice = user_choice[:-1]
+                    # append value to string
                     else:
                         user_choice += event.unicode
 
+            # Update screen background
             DISPLAYSURF.fill(gv.WHITE)
             DISPLAYSURF.blit(background, (0, 0))
 
-            # Render the current text.
+            # Render the current user choice string text
             txt_surface = FONT_MEDIUM.render(user_choice, True, gv.BLACK)
 
-            # Resize the box if the text is too long.
+            # Resize the box if the text is too long, centered on screen
             width = max(200, txt_surface.get_width()+10)
             input_box.w = width
             input_box.x = 360 - (width/2)
 
-            # Blit the input_box rect.
+            # Draw text entry box on screen
             pygame.draw.rect(DISPLAYSURF, gv.PALE_BLUE, input_box)
 
-            # Blit the text.
+            # Draw user choice on screen in box
             DISPLAYSURF.blit(txt_surface, (input_box.x+5, input_box.y+5))
             DISPLAYSURF.blit(
                 choose_pokemon_surf,
                 (360 - (choose_pokemon_size[0]/2),
                     168 - (choose_pokemon_size[1]/2)))
 
+            # Update display
             pygame.display.update()
             FramePerSec.tick(gv.FPS)
 
+        # Lowercase pokemon name to do request
         user_choice = user_choice.lower()
 
+        # If choice is random or empty -> run random request
         if user_choice == "random" or user_choice == "":
             random_number = str(random.randint(1, 898))
             user_choice_data = requests.get(
@@ -210,6 +243,7 @@ def choose_pokemon(player_or_enemy):
                 f"https://pokeapi.co/api/v2/pokemon/{user_choice}/")
 
         # TODO: Add more specific Error Messages
+        # If request not valid, run text entry again
         if user_choice_data.status_code != 200:
             print(f"{user_choice} is not a recognized pokemon.")
             user_choice = ''
@@ -218,7 +252,7 @@ def choose_pokemon(player_or_enemy):
             done = True
             user_choice = user_choice_data.json()['name']
             print(f"{user_choice.capitalize()} was chosen!")
-            return user_choice
+            return user_choice_data
 
 
 def battle_screen(P1, P2):
@@ -243,11 +277,10 @@ def battle_screen(P1, P2):
     # Determine who attacks first
     whose_turn = who_is_attacking(P1, P2)
 
-    # Game loop
+    # Main game loop
     while True:
         mouse = pygame.mouse.get_pos()
         for event in pygame.event.get():
-
             if event.type == pygame.locals.MOUSEBUTTONDOWN:
                 # Attack button
                 if 0 <= mouse[0] <= 130 and 0 <= mouse[1] <= 30:
@@ -258,7 +291,8 @@ def battle_screen(P1, P2):
                         else:  # if whose_turn == "enemy":
                             P2.is_moving = True
                             whose_turn = "user"
-            # System exit window button, close game
+
+            # System exit button -> close game
             if event.type == pygame.locals.QUIT:
                 for entity in all_sprites:
                     entity.kill()
@@ -270,6 +304,7 @@ def battle_screen(P1, P2):
         DISPLAYSURF.blit(background, (0, 0))
 
         # Update sprite locations while attack moving
+        # User: Go right -> enemy take damage -> go left
         if P1.is_moving:
             if P1.direction == "right":
                 if P1.pokemon_location != gv.BASE_ENEMY_LOCATION:
@@ -292,6 +327,7 @@ def battle_screen(P1, P2):
             P1.update()
             P1.display()
 
+        # Enemy: go left -> user take damage -> go right
         if P2.is_moving:
             if P2.direction == "left":
                 if P2.pokemon_location != gv.BASE_PLAYER_LOCATION:
@@ -316,7 +352,8 @@ def battle_screen(P1, P2):
 
         # Make sure neither pokemon is moving
         if not P1.is_moving and not P2.is_moving:
-            # Display attack button only if neither is moving
+            # Draw attack button only if neither is moving
+            # Change color of button on hover
             if 0 <= mouse[0] <= 130 and 0 <= mouse[1] <= 30:
                 attack_button_color = gv.LIGHT_BLUE
             else:
@@ -336,7 +373,6 @@ def battle_screen(P1, P2):
                 # Display end game screen
                 time.sleep(2)
                 print_end_message(winner, loser)
-                print("can i get here bro")
                 for entity in all_sprites:
                     entity.kill()
                 return
@@ -372,4 +408,3 @@ if __name__ == "__main__":
 
 # TODO: Add attacks with special attack/defense
 # TODO: Add movesets for pokemon
-# TODO: Split code into other files
