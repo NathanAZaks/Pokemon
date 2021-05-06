@@ -390,7 +390,7 @@ def main():
     still_playing = True
 
     # play background music on loop
-    # pygame.mixer.music.play(-1)
+    pygame.mixer.music.play(-1)
 
     while still_playing:
         print("Select user pokemon.")
