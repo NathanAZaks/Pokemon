@@ -1,8 +1,24 @@
 # Pokemon
 My Pokemon Recreation
 
-To run first:
+### Steps to install and run script
+Must have:
+* Python3
+* Internet connection
+
+Steps:
+* Open command prompt and run:
+
+```git clone https://github.com/NathanAZaks/Pokemon.git```
+
+* Next:
+
+```cd Pokemon```
+
+* Install necessary packages:
+
 ```python -m pip install -r requirements.txt```
 
-Then:
+* Then run:
+
 ```python pygamePokemon.py```
