@@ -27,13 +27,6 @@ game_over_text = "Game Over"
 game_over = FONT_LARGE.render(game_over_text, True, gv.BLACK)
 game_over_size = FONT_LARGE = FONT_LARGE.size(game_over_text)
 
-# TODO: Add welcome text to opening screen
-welcome_text = """Hello there! Welcome to the world of Pokémon!
-    My name is Oak! People call me the Pokémon Prof!
-    This world is inhabited by creatures called Pokémon!
-    For some people, Pokémon are pets. Other use them for fights.
-    Myself… I study Pokémon as a profession."""
-
 # Set up backround from 1 of 7 background options, size: 240x112
 background = pygame.image.load(f"./Assets/background{random.randint(0,6)}.png")
 background = pygame.transform.scale(background, gv.RESOLUTION)
@@ -154,14 +147,13 @@ def print_end_message(winner, loser):
         FramePerSec.tick(gv.FPS)
 
 
-def choose_pokemon(player_or_enemy):
+def choose_pokemon(player_or_enemy, user_name):
     """
     Use to allow user to select which pokemon.
 
     Accepts string "player" or "enemy" to determine what to print to screen.
     Returns .json() list from request object.
     """
-    # Render choose pokemon string
     choose_pokemon_string = (
         f"Choose {player_or_enemy} pokemon. (Enter a Pokemon name or random)")
     choose_pokemon_surf = FONT_SMALL.render(
@@ -169,6 +161,12 @@ def choose_pokemon(player_or_enemy):
         True,
         gv.BLACK)
     choose_pokemon_size = FONT_SMALL.size(choose_pokemon_string)
+
+    welcome_text = f"""Hello there {user_name}!"""
+    welcome_text_surf = FONT_SMALL.render(
+        welcome_text,
+        True,
+        gv.BLACK)
 
     # Set up background for choosing pokemon
     DISPLAYSURF.fill(gv.WHITE)
@@ -225,6 +223,9 @@ def choose_pokemon(player_or_enemy):
                 choose_pokemon_surf,
                 (360 - (choose_pokemon_size[0]/2),
                     168 - (choose_pokemon_size[1]/2)))
+            DISPLAYSURF.blit(
+                welcome_text_surf,
+                (input_box.x+5, input_box.y-50))
 
             # Update display
             pygame.display.update()
@@ -253,6 +254,92 @@ def choose_pokemon(player_or_enemy):
             user_choice = user_choice_data.json()['name']
             print(f"{user_choice.capitalize()} was chosen!")
             return user_choice_data
+
+
+def welcome_to_pokemon_screen():
+    """Use to allow user to enter name."""
+    user_name = ""
+    # Render choose pokemon string
+    enter_user_name_string = "What was your name again?"
+    enter_user_name_string2 = (
+        "Welcome to the wonderful world of Pokemon.")
+    enter_user_name_surf = FONT_SMALL.render(
+        enter_user_name_string,
+        True,
+        gv.BLACK)
+    enter_user_name_surf2 = FONT_SMALL.render(
+        enter_user_name_string2,
+        True,
+        gv.BLACK)
+    enter_user_name_size = FONT_SMALL.size(enter_user_name_string)
+    enter_user_name_size2 = FONT_SMALL.size(enter_user_name_string2)
+
+    # Set up background for choosing pokemon
+    DISPLAYSURF.fill(gv.WHITE)
+    DISPLAYSURF.blit(background, (0, 0))
+    input_box = pygame.Rect(
+        290,
+        180,
+        140,
+        32)
+
+    # String to hold user input
+    done = False
+
+    # Main choose pokemon screen loop
+    while True:
+        # Loop while haven't chosen pokemon yet
+        while not done:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    done = True
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    # break loop if hit enter
+                    if event.key == pygame.K_RETURN:
+                        done = True
+                    # truncate string if backspace
+                    elif event.key == pygame.K_BACKSPACE:
+                        user_name = user_name[:-1]
+                    # append value to string
+                    else:
+                        user_name += event.unicode
+
+            # Update screen background
+            DISPLAYSURF.fill(gv.WHITE)
+            DISPLAYSURF.blit(background, (0, 0))
+
+            # Render the current user choice string text
+            txt_surface = FONT_MEDIUM.render(user_name, True, gv.BLACK)
+
+            # Resize the box if the text is too long, centered on screen
+            width = max(200, txt_surface.get_width()+10)
+            input_box.w = width
+            input_box.x = 360 - (width/2)
+
+            # Draw text entry box on screen
+            pygame.draw.rect(DISPLAYSURF, gv.PALE_BLUE, input_box)
+
+            # Draw user choice on screen in box
+            DISPLAYSURF.blit(txt_surface, (input_box.x+5, input_box.y+5))
+            DISPLAYSURF.blit(
+                enter_user_name_surf,
+                (360 - (enter_user_name_size[0]/2),
+                    168 - (enter_user_name_size[1]/2)))
+            DISPLAYSURF.blit(
+                enter_user_name_surf2,
+                (360 - (enter_user_name_size2[0]/2),
+                    120 - (enter_user_name_size2[1]/2)))
+
+            # Update display
+            pygame.display.update()
+            FramePerSec.tick(gv.FPS)
+
+        # Lowercase pokemon name to do request
+        user_name = user_name.capitalize()
+
+        return user_name
 
 
 def battle_screen(P1, P2):
@@ -384,7 +471,7 @@ def battle_screen(P1, P2):
 
 def main():
     """Run code to choose pokemon and begin battle in loop."""
-    # TODO: add welcome_to_pokemon_screen()
+    # welcome_to_pokemon_screen()
 
     # initialize outer game loop
     still_playing = True
@@ -392,11 +479,19 @@ def main():
     # play background music on loop
     pygame.mixer.music.play(-1)
 
+    user_name = welcome_to_pokemon_screen()
+
     while still_playing:
         print("Select user pokemon.")
-        P1 = Player(choose_pokemon("player"), gv.PLAYER_LOCATION, DISPLAYSURF)
+        P1 = Player(
+            choose_pokemon("player", user_name),
+            gv.PLAYER_LOCATION,
+            DISPLAYSURF)
         print("Select opponent pokemon.")
-        P2 = Player(choose_pokemon("enemy"), gv.ENEMY_LOCATION, DISPLAYSURF)
+        P2 = Player(
+            choose_pokemon("enemy", user_name),
+            gv.ENEMY_LOCATION,
+            DISPLAYSURF)
 
         battle_screen(P1, P2)
 
