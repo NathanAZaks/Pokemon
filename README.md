@@ -21,4 +21,4 @@ Steps:
 
 * Then run:
 
-```python pygamePokemon.py```
+```python ./src/pygamePokemon.py```
