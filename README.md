@@ -5,6 +5,7 @@ My Pokemon Recreation
 Must have:
 * Python3
 * Internet connection
+* git
 
 Steps:
 * Open command prompt and run:
@@ -13,7 +14,7 @@ Steps:
 
 * Next:
 
-```cd Pokemon```
+```cd Pokemon/src```
 
 * Install necessary packages:
 
@@ -21,4 +22,4 @@ Steps:
 
 * Then run:
 
-```python ./src/pygamePokemon.py```
+```python3 pygamePokemon.py```
