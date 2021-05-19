@@ -40,7 +40,7 @@ DISPLAYSURF.fill(gv.WHITE)
 DISPLAYSURF.blit(background, (0, 0))
 
 
-def calculate_damage(attacking_pokemon, defending_pokemon, move_power=280):
+def calculate_damage(attacking_pokemon, defending_pokemon, move_power=80):
     """
     Calculate damage between two pokemon.
 
