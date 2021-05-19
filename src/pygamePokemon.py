@@ -18,9 +18,9 @@ pygame.display.set_caption("Welcome to Pokemon!")
 FramePerSec = pygame.time.Clock()
 
 # Setting up fonts
-FONT_LARGE = pygame.font.Font("./Assets/Pokemon GB.ttf", 60)
-FONT_MEDIUM = pygame.font.Font("./Assets/Pokemon GB.ttf", 20)
-FONT_SMALL = pygame.font.Font("./Assets/Pokemon GB.ttf", 12)
+FONT_LARGE = pygame.font.Font("../Assets/Pokemon GB.ttf", 60)
+FONT_MEDIUM = pygame.font.Font("../Assets/Pokemon GB.ttf", 20)
+FONT_SMALL = pygame.font.Font("../Assets/Pokemon GB.ttf", 12)
 
 # Setting up strings to print
 game_over_text = "Game Over"
@@ -28,11 +28,11 @@ game_over = FONT_LARGE.render(game_over_text, True, gv.BLACK)
 game_over_size = FONT_LARGE = FONT_LARGE.size(game_over_text)
 
 # Set up backround from 1 of 7 background options, size: 240x112
-background = pygame.image.load(f"./Assets/background{random.randint(0,6)}.png")
+background = pygame.image.load(f"../Assets/background{random.randint(0,6)}.png")
 background = pygame.transform.scale(background, gv.RESOLUTION)
 
 # Load background music for player
-pygame.mixer.music.load('./Assets/background_battle_music.wav')
+pygame.mixer.music.load('../Assets/background_battle_music.wav')
 
 # Set up game window and print background to screen
 DISPLAYSURF = pygame.display.set_mode(gv.RESOLUTION)
@@ -113,12 +113,13 @@ def print_end_message(winner, loser):
         for event in pygame.event.get():
             if event.type == pygame.locals.MOUSEBUTTONDOWN:
                 # If hit play again -> exit end message
-                if 50 <= mouse[0] <= 260 and 200 <= mouse[1] <= 230:
+                if 75 <= mouse[0] <= 285 and 200 <= mouse[1] <= 230:
                     return
                 # If hit exit now -> quit
-                elif 300 <= mouse[0] <= 470 and 200 <= mouse[1] <= 230:
+                elif 455 <= mouse[0] <= 625 and 200 <= mouse[1] <= 230:
                     pygame.quit()
                     sys.exit()
+
             # If hit window X -> Exit
             if event.type == pygame.locals.QUIT:
                 pygame.quit()

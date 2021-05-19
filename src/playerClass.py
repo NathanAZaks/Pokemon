@@ -8,9 +8,9 @@ import globalVariables as gv
 pygame.init()
 
 # Setting up fonts
-FONT_LARGE = pygame.font.Font("./Assets/Pokemon GB.ttf", 60)
-FONT_MEDIUM = pygame.font.Font("./Assets/Pokemon GB.ttf", 20)
-FONT_SMALL = pygame.font.Font("./Assets/Pokemon GB.ttf", 12)
+FONT_LARGE = pygame.font.Font("../Assets/Pokemon GB.ttf", 60)
+FONT_MEDIUM = pygame.font.Font("../Assets/Pokemon GB.ttf", 20)
+FONT_SMALL = pygame.font.Font("../Assets/Pokemon GB.ttf", 12)
 
 
 def scale_hp(base_value, IV, EV, level):
